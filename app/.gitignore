@@ -20,6 +20,10 @@
 # production
 /build
 
+# electron build artifacts
+/dist/
+/installer/
+
 # misc
 .DS_Store
 *.pem
