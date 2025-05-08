@@ -1,0 +1,29 @@
+{
+    "appId": "wallpaperapp",
+    "productName": "Wallpaper App",
+    "directories": {
+        "buildResources": "resources"
+    },
+    "files": [
+        "out/**/*",
+        "electron/**/*",
+        "index.js"
+    ],
+    "win": {
+        "target": [
+            "nsis"
+        ]
+    },
+    "mac": {
+        "target": [
+            "dmg"
+        ]
+    },
+    "linux": {
+        "target": [
+            "AppImage",
+            "deb"
+        ],
+        "category": "Utility"
+    }
+}
