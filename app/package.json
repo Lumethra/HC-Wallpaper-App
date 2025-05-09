@@ -22,6 +22,7 @@
     "electron:clean": "rm -rf out dist installer .next"
   },
   "dependencies": {
+    "@vercel/analytics": "^1.5.0",
     "electron-is-dev": "^3.0.1",
     "next": "^15.3.2",
     "react": "^19.1.0",

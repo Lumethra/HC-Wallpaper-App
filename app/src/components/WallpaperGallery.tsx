@@ -111,13 +111,13 @@ export default function WallpaperGallery() {
                     <p className="mb-2 text-sm">For testing: Switch device type</p>
                     <div className="flex space-x-2">
                         <button
-                            className={`px-3 py-1 rounded ${deviceType === ('desktop' as string) ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                            className={`px-3 py-1 rounded ${deviceType === ('desktop' as string) ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
                             onClick={() => setDeviceType('desktop')}
                         >
                             Desktop
                         </button>
                         <button
-                            className={`px-3 py-1 rounded ${deviceType === ('mobile' as string) ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                            className={`px-3 py-1 rounded ${deviceType === ('mobile' as string) ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
                             onClick={() => setDeviceType('mobile')}
                         >
                             Mobile
@@ -183,13 +183,13 @@ export default function WallpaperGallery() {
                 <p className="mb-2 text-sm">For testing: Switch device type</p>
                 <div className="flex space-x-2">
                     <button
-                        className={`px-3 py-1 rounded ${deviceType === ('desktop' as string) ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                        className={`px-3 py-1 rounded ${deviceType === ('desktop' as string) ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
                         onClick={() => setDeviceType('desktop')}
                     >
                         Desktop
                     </button>
                     <button
-                        className={`px-3 py-1 rounded ${deviceType === ('mobile' as string) ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                        className={`px-3 py-1 rounded ${deviceType === ('mobile' as string) ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
                         onClick={() => setDeviceType('mobile')}
                     >
                         Mobile
