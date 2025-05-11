@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const isDev = require('electron-is-dev');
-const wallpaper = require('wallpaper');
+const { getWallpaper, setWallpaper } = require('wallpaper');
 
 let mainWindow;
 
@@ -52,7 +52,7 @@ app.on('activate', () => {
 // Handle getting current wallpaper
 ipcMain.handle('get-wallpaper', async () => {
     try {
-        const currentWallpaper = await wallpaper.get();
+        const currentWallpaper = await getWallpaper();
         return { success: true, path: currentWallpaper };
     } catch (error) {
         console.error('Error getting wallpaper:', error);
@@ -66,7 +66,34 @@ ipcMain.handle('get-wallpaper', async () => {
 // Handle setting wallpaper
 ipcMain.handle('set-wallpaper', async (_, imagePath) => {
     try {
-        await wallpaper.set(imagePath);
+        // Check if this is a remote URL (from Vercel)
+        if (imagePath.startsWith('http')) {
+            // We need to download the file first
+            const response = await fetch(imagePath);
+            if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+
+            const buffer = Buffer.from(await response.arrayBuffer());
+
+            // Save to temporary location
+            const wallpaperDir = path.join(os.homedir(), '.wallpaper-app');
+            if (!fs.existsSync(wallpaperDir)) {
+                fs.mkdirSync(wallpaperDir, { recursive: true });
+            }
+
+            // Extract filename from URL
+            const fileName = path.basename(new URL(imagePath).pathname);
+            const localPath = path.join(wallpaperDir, fileName);
+
+            // Save the downloaded file
+            fs.writeFileSync(localPath, buffer);
+
+            // Now set this local file as wallpaper
+            await setWallpaper(localPath);
+        } else {
+            // It's already a local path, just set it
+            await setWallpaper(imagePath);
+        }
+
         return { success: true };
     } catch (error) {
         console.error('Error setting wallpaper:', error);
@@ -95,6 +122,48 @@ ipcMain.handle('save-wallpaper-image', async (_, imageData) => {
         };
     } catch (error) {
         console.error('Error saving image:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        };
+    }
+});
+
+// Handle saving and setting wallpaper
+ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
+    try {
+        // Create directory for wallpapers if it doesn't exist
+        const wallpaperDir = path.join(os.homedir(), '.wallpaper-app', 'wallpapers');
+        if (!fs.existsSync(wallpaperDir)) {
+            fs.mkdirSync(wallpaperDir, { recursive: true });
+        }
+
+        // Handle data URL
+        const matches = wallpaper.dataUrl.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
+        if (!matches) {
+            throw new Error('Invalid data URL format');
+        }
+
+        // Create a file name (sanitize the name)
+        const safeName = wallpaper.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+
+        const fileName = `${safeName}-${Date.now()}.${wallpaper.format || 'jpg'}`;
+        const filePath = path.join(wallpaperDir, fileName);
+
+        // Save the image file
+        const imageData = Buffer.from(matches[2], 'base64');
+        fs.writeFileSync(filePath, imageData);
+
+        // Set as wallpaper
+        await setWallpaper(filePath);
+
+        return { success: true, filePath };
+    } catch (error) {
+        console.error('Error saving or setting wallpaper:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error'

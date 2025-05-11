@@ -2,6 +2,7 @@ export interface WallpaperAPIResponse {
     success: boolean;
     path?: string;
     error?: string;
+    filePath?: string;
 }
 
 declare global {
@@ -12,6 +13,11 @@ declare global {
             saveWallpaperImage: (imageData: {
                 buffer: ArrayBuffer;
                 name: string;
+            }) => Promise<WallpaperAPIResponse>;
+            saveAndSetWallpaper: (wallpaper: {
+                name: string;
+                dataUrl: string;
+                format?: string;
             }) => Promise<WallpaperAPIResponse>;
         }
     }

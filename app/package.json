@@ -18,8 +18,8 @@
     "start": "next start",
     "lint": "next lint",
     "electron:dev": "concurrently \"cross-env npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron:build": "cross-env ELECTRON=true next build && cp index.js out/ && electron-builder && mkdir -p installer && find dist -name '*.AppImage' -o -name '*.exe' -o -name '*.dmg' -o -name '*.deb' | xargs -I{} cp {} installer/ 2>/dev/null || true",
-    "electron:clean": "rm -rf out dist installer .next"
+    "electron:build": "cross-env ELECTRON=true next build && node scripts/electron-build-helper.js",
+    "electron:clean": "node scripts/clean.js"
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",

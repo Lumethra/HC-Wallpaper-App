@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Wallpaper } from '@/app/api/wallpapers/route';
+import { getWallpaperApiUrl, getWallpaperImageUrl } from '@/utils/api-config';
 
 export default function WallpaperGallery() {
     const [wallpapers, setWallpapers] = useState<Wallpaper[]>([]);
@@ -19,15 +20,27 @@ export default function WallpaperGallery() {
 
     useEffect(() => {
         async function fetchWallpapers() {
+            setLoading(true);
             try {
-                const response = await fetch(`/api/wallpapers?deviceType=${deviceType}`);
+                // First try to fetch from API (will be from Vercel in production)
+                const apiUrl = getWallpaperApiUrl(deviceType);
+                const response = await fetch(apiUrl);
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setWallpapers(data.wallpapers || []);
+                } else {
+                    // If that fails, try to use the static file
+                    console.warn('API fetch failed, falling back to static catalog');
+                    const staticResponse = await fetch('/remote-wallpapers.json');
+
+                    if (staticResponse.ok) {
+                        const staticData = await staticResponse.json();
+                        setWallpapers(staticData[deviceType]?.wallpapers || []);
+                    } else {
+                        throw new Error('Failed to fetch wallpapers from static catalog');
+                    }
                 }
-
-                const data = await response.json();
-                setWallpapers(data.wallpapers || []);
             } catch (err) {
                 console.error("Failed to fetch wallpapers:", err);
                 setError("Failed to load wallpapers");
@@ -69,7 +82,7 @@ export default function WallpaperGallery() {
                                 {/* Image container with fixed height */}
                                 <div className="w-full aspect-[9/16] overflow-hidden">
                                     <img
-                                        src={wallpaper.path}
+                                        src={getWallpaperImageUrl(wallpaper.path)}
                                         alt={wallpaper.name}
                                         className="w-full h-full object-cover"
                                     />
@@ -85,7 +98,7 @@ export default function WallpaperGallery() {
                                     {/* Buttons on the overlay */}
                                     <div className="flex gap-2 mt-2">
                                         <a
-                                            href={wallpaper.path}
+                                            href={getWallpaperImageUrl(wallpaper.path)}
                                             download
                                             className="flex-1 px-2 py-1 bg-blue-500 text-white rounded text-center hover:bg-blue-600 text-xs"
                                         >
@@ -139,7 +152,7 @@ export default function WallpaperGallery() {
                     <div key={wallpaper.id} className="border rounded-lg overflow-hidden shadow-md">
                         <div className="relative h-48">
                             <img
-                                src={wallpaper.path}
+                                src={getWallpaperImageUrl(wallpaper.path)}
                                 alt={wallpaper.name}
                                 className="w-full h-full object-cover"
                             />
@@ -151,21 +164,48 @@ export default function WallpaperGallery() {
                             </p>
                             <button
                                 className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"
-                                onClick={() => {
-                                    // We'll use your existing wallpaper utility here
+                                onClick={async () => {
                                     if (typeof window !== 'undefined' && window.wallpaperAPI) {
-                                        window.wallpaperAPI.setWallpaper(wallpaper.path)
-                                            .then(result => {
-                                                if (result.success) {
-                                                    alert('Wallpaper set successfully!');
-                                                } else {
-                                                    alert(`Failed to set wallpaper: ${result.error}`);
+                                        try {
+                                            // First, download the image
+                                            const response = await fetch(getWallpaperImageUrl(wallpaper.path));
+                                            if (!response.ok) {
+                                                throw new Error(`Failed to fetch image: ${response.status}`);
+                                            }
+
+                                            // Get the image as a blob
+                                            const blob = await response.blob();
+
+                                            // Convert to base64 data URL
+                                            const reader = new FileReader();
+                                            reader.readAsDataURL(blob);
+
+                                            reader.onloadend = async () => {
+                                                const base64data = reader.result as string;
+
+                                                // Use the same approach as wallpaper uploader
+                                                try {
+                                                    // Save and set the wallpaper using the main process
+                                                    const result = await window.wallpaperAPI.saveAndSetWallpaper({
+                                                        name: wallpaper.name,
+                                                        dataUrl: base64data,
+                                                        format: wallpaper.format
+                                                    });
+
+                                                    if (result.success) {
+                                                        alert('Wallpaper set successfully!');
+                                                    } else {
+                                                        alert(`Failed to set wallpaper: ${result.error}`);
+                                                    }
+                                                } catch (err) {
+                                                    alert('Error saving or setting wallpaper');
+                                                    console.error(err);
                                                 }
-                                            })
-                                            .catch(err => {
-                                                alert('Error setting wallpaper');
-                                                console.error(err);
-                                            });
+                                            };
+                                        } catch (err) {
+                                            alert(`Error downloading wallpaper: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                                            console.error(err);
+                                        }
                                     } else {
                                         alert('This feature is only available in the desktop app');
                                     }

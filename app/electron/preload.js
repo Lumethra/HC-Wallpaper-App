@@ -5,5 +5,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('wallpaperAPI', {
     getCurrentWallpaper: () => ipcRenderer.invoke('get-wallpaper'),
     setWallpaper: (imagePath) => ipcRenderer.invoke('set-wallpaper', imagePath),
-    saveWallpaperImage: (imageData) => ipcRenderer.invoke('save-wallpaper-image', imageData)
+    saveWallpaperImage: (imageData) => ipcRenderer.invoke('save-wallpaper-image', imageData),
+    // Make sure this line exists and matches your type definition
+    saveAndSetWallpaper: (wallpaper) => ipcRenderer.invoke('save-and-set-wallpaper', wallpaper)
 });

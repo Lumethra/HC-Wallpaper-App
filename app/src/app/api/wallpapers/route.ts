@@ -2,6 +2,8 @@ import { readdir, stat } from 'fs/promises';
 import path from 'path';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'error';
+
 export interface Wallpaper {
     id: string;
     name: string;
@@ -34,12 +36,12 @@ export async function GET(request: Request) {
             deviceType
         );
 
-        // Check if directory exists, if not use default directory
+        // Rest of your existing code remains the same
         let files;
         try {
             files = await readdir(wallpapersDir);
         } catch (err) {
-            // Fallback to general wallpapers directory if specific one doesn't exist
+            // Fallback code
             console.warn(`Directory for ${deviceType} not found, using default wallpapers`);
             const defaultDir = path.join(process.cwd(), 'public', 'wallpapers');
             files = await readdir(defaultDir);
@@ -88,11 +90,14 @@ export async function GET(request: Request) {
                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                 .join(' ');
 
+            // Get base URL for Electron production mode
+            const baseUrl = process.env.ELECTRON === 'true' ? 'https://hc-wallpaper-app.vercel.app' : '';
+
             return {
                 id: nameWithoutExt,
                 name: displayName,
-                // Path to the device-specific wallpaper
-                path: `/wallpapers/${deviceType}/${file}`,
+                // Use absolute paths for Electron production
+                path: `${baseUrl}/wallpapers/${deviceType}/${file}`,
                 size: fileStats.size,
                 addedAt: fileStats.birthtimeMs,
                 format: ext.replace('.', ''),
