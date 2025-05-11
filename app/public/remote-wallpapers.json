@@ -1,0 +1,165 @@
+{
+  "desktop": {
+    "wallpapers": [
+      {
+        "id": "acon-desktop-1",
+        "name": "Acon Desktop 1",
+        "path": "/wallpapers/desktop/acon-desktop-1.png",
+        "size": 2988226,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "desktop"
+      },
+      {
+        "id": "acon-desktop-2",
+        "name": "Acon Desktop 2",
+        "path": "/wallpapers/desktop/acon-desktop-2.png",
+        "size": 3873312,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "desktop"
+      },
+      {
+        "id": "acon-desktop-3",
+        "name": "Acon Desktop 3",
+        "path": "/wallpapers/desktop/acon-desktop-3.png",
+        "size": 4183838,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "desktop"
+      },
+      {
+        "id": "acon-desktop-4",
+        "name": "Acon Desktop 4",
+        "path": "/wallpapers/desktop/acon-desktop-4.png",
+        "size": 3831007,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "desktop"
+      },
+      {
+        "id": "acon-desktop-5",
+        "name": "Acon Desktop 5",
+        "path": "/wallpapers/desktop/acon-desktop-5.png",
+        "size": 5706233,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "desktop"
+      },
+      {
+        "id": "kailing-desktop-1",
+        "name": "Kailing Desktop 1",
+        "path": "/wallpapers/desktop/kailing-desktop-1.png",
+        "size": 6092356,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "desktop"
+      },
+      {
+        "id": "kailing-desktop-2",
+        "name": "Kailing Desktop 2",
+        "path": "/wallpapers/desktop/kailing-desktop-2.png",
+        "size": 3942599,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "desktop"
+      },
+      {
+        "id": "placeholder-background",
+        "name": "Placeholder Background",
+        "path": "/wallpapers/desktop/placeholder-background.jpg",
+        "size": 40075,
+        "addedAt": 0,
+        "format": "jpg",
+        "deviceType": "desktop"
+      },
+      {
+        "id": "tongyu-desktop-1",
+        "name": "Tongyu Desktop 1",
+        "path": "/wallpapers/desktop/tongyu-desktop-1.png",
+        "size": 1427119,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "desktop"
+      },
+      {
+        "id": "tongyu-desktop-2",
+        "name": "Tongyu Desktop 2",
+        "path": "/wallpapers/desktop/tongyu-desktop-2.png",
+        "size": 1663160,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "desktop"
+      }
+    ],
+    "deviceType": "desktop"
+  },
+  "mobile": {
+    "wallpapers": [
+      {
+        "id": "acon-mobile-1",
+        "name": "Acon Mobile 1",
+        "path": "/wallpapers/mobile/acon-mobile-1.png",
+        "size": 3677677,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "mobile"
+      },
+      {
+        "id": "acon-mobile-2",
+        "name": "Acon Mobile 2",
+        "path": "/wallpapers/mobile/acon-mobile-2.png",
+        "size": 2990844,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "mobile"
+      },
+      {
+        "id": "kailing-mobile-1",
+        "name": "Kailing Mobile 1",
+        "path": "/wallpapers/mobile/kailing-mobile-1.png",
+        "size": 4008603,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "mobile"
+      },
+      {
+        "id": "kailing-mobile-2",
+        "name": "Kailing Mobile 2",
+        "path": "/wallpapers/mobile/kailing-mobile-2.png",
+        "size": 9694800,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "mobile"
+      },
+      {
+        "id": "tongyu-mobile-1",
+        "name": "Tongyu Mobile 1",
+        "path": "/wallpapers/mobile/tongyu-mobile-1.png",
+        "size": 1429285,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "mobile"
+      },
+      {
+        "id": "tongyu-mobile-2",
+        "name": "Tongyu Mobile 2",
+        "path": "/wallpapers/mobile/tongyu-mobile-2.png",
+        "size": 1459456,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "mobile"
+      },
+      {
+        "id": "tongyu-mobile-3",
+        "name": "Tongyu Mobile 3",
+        "path": "/wallpapers/mobile/tongyu-mobile-3.png",
+        "size": 1585232,
+        "addedAt": 0,
+        "format": "png",
+        "deviceType": "mobile"
+      }
+    ],
+    "deviceType": "mobile"
+  }
+}

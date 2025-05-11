@@ -1,18 +1,18 @@
 {
-    "appId": "wallpaperapp",
-    "productName": "Wallpaper App",
+    "appId": "com.hackclub.wallpaper-app",
+    "productName": "HC Wallpaper App",
     "directories": {
-        "buildResources": "resources"
+        "output": "dist"
     },
     "files": [
         "out/**/*",
         "electron/**/*",
-        "index.js"
+        "index.js",
+        "package.json"
     ],
     "win": {
-        "target": [
-            "nsis"
-        ]
+        "target": "portable",
+        "artifactName": "${productName}-Portable-${version}.${ext}"
     },
     "mac": {
         "target": [
@@ -23,7 +23,7 @@
         "target": [
             "AppImage",
             "deb"
-        ],
-        "category": "Utility"
-    }
+        ]
+    },
+    "publish": null
 }

@@ -2,7 +2,8 @@ import { readdir, stat } from 'fs/promises';
 import path from 'path';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'error';
+// This setting allows Next.js to export the route statically
+export const dynamic = 'force-static';
 
 export interface Wallpaper {
     id: string;
@@ -14,104 +15,92 @@ export interface Wallpaper {
     deviceType: 'mobile' | 'desktop';
 }
 
-export async function GET(request: Request) {
+// Remove request parameter since it's not compatible with static export
+export async function GET() {
     try {
-        // Get device type from query parameter or user-agent
-        const { searchParams } = new URL(request.url);
-        let deviceType = searchParams.get('deviceType') as 'mobile' | 'desktop' | null;
+        // Pre-generate data for both device types for static export
+        const results: Record<string, any> = {};
 
-        // If not explicitly specified, try to detect from user-agent
-        if (!deviceType) {
-            const userAgent = request.headers.get('user-agent') || '';
-            deviceType = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
-                ? 'mobile'
-                : 'desktop';
-        }
-
-        // Path to wallpapers directory based on device type
-        const wallpapersDir = path.join(
-            process.cwd(),
-            'public',
-            'wallpapers',
-            deviceType
-        );
-
-        // Rest of your existing code remains the same
-        let files;
-        try {
-            files = await readdir(wallpapersDir);
-        } catch (err) {
-            // Fallback code
-            console.warn(`Directory for ${deviceType} not found, using default wallpapers`);
-            const defaultDir = path.join(process.cwd(), 'public', 'wallpapers');
-            files = await readdir(defaultDir);
-        }
-
-        // Filter for image files
-        const imageFiles = files.filter(file => {
-            const ext = path.extname(file).toLowerCase();
-            return ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext);
-        });
-
-        // Get metadata for each file
-        const wallpapersPromises = imageFiles.map(async (file) => {
-            // Use the appropriate directory path for stat operations
-            const dirPath = path.join(
+        for (const deviceType of ['desktop', 'mobile']) {
+            const wallpapersDir = path.join(
                 process.cwd(),
                 'public',
                 'wallpapers',
                 deviceType
             );
 
-            const filePath = path.join(dirPath, file);
-            let fileStats;
-
+            let files;
             try {
-                fileStats = await stat(filePath);
+                files = await readdir(wallpapersDir);
             } catch (err) {
-                // If file doesn't exist in device-specific folder, try default
-                const defaultFilePath = path.join(
+                console.warn(`Directory for ${deviceType} not found, using default wallpapers`);
+                const defaultDir = path.join(process.cwd(), 'public', 'wallpapers');
+                files = await readdir(defaultDir);
+            }
+
+            // Filter for image files
+            const imageFiles = files.filter(file => {
+                const ext = path.extname(file).toLowerCase();
+                return ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext);
+            });
+
+            // Process files and get metadata
+            const wallpapersPromises = imageFiles.map(async (file) => {
+                const dirPath = path.join(
                     process.cwd(),
                     'public',
                     'wallpapers',
-                    file
+                    deviceType
                 );
-                fileStats = await stat(defaultFilePath);
-            }
 
-            const ext = path.extname(file);
-            const nameWithoutExt = path.basename(file, ext);
+                const filePath = path.join(dirPath, file);
+                let fileStats;
 
-            // Create a nice display name from filename
-            const displayName = nameWithoutExt
-                .replace(/-/g, ' ')
-                .replace(/_/g, ' ')
-                .split(' ')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ');
+                try {
+                    fileStats = await stat(filePath);
+                } catch (err) {
+                    const defaultFilePath = path.join(
+                        process.cwd(),
+                        'public',
+                        'wallpapers',
+                        file
+                    );
+                    fileStats = await stat(defaultFilePath);
+                }
 
-            // Get base URL for Electron production mode
-            const baseUrl = process.env.ELECTRON === 'true' ? 'https://hc-wallpaper-app.vercel.app' : '';
+                const ext = path.extname(file);
+                const nameWithoutExt = path.basename(file, ext);
 
-            return {
-                id: nameWithoutExt,
-                name: displayName,
-                // Use absolute paths for Electron production
-                path: `${baseUrl}/wallpapers/${deviceType}/${file}`,
-                size: fileStats.size,
-                addedAt: fileStats.birthtimeMs,
-                format: ext.replace('.', ''),
+                const displayName = nameWithoutExt
+                    .replace(/-/g, ' ')
+                    .replace(/_/g, ' ')
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+
+                const baseUrl = process.env.ELECTRON === 'true' ? 'https://hc-wallpaper-app.vercel.app' : '';
+
+                return {
+                    id: nameWithoutExt,
+                    name: displayName,
+                    path: `${baseUrl}/wallpapers/${deviceType}/${file}`,
+                    size: fileStats.size,
+                    addedAt: fileStats.birthtimeMs,
+                    format: ext.replace('.', ''),
+                    deviceType
+                };
+            });
+
+            const wallpapers = await Promise.all(wallpapersPromises);
+            wallpapers.sort((a, b) => b.addedAt - a.addedAt);
+
+            results[deviceType] = {
+                wallpapers,
                 deviceType
             };
-        });
+        }
 
-        const wallpapers = await Promise.all(wallpapersPromises);
-        wallpapers.sort((a, b) => b.addedAt - a.addedAt);
-
-        return NextResponse.json({
-            wallpapers,
-            deviceType
-        });
+        return NextResponse.json(results);
     } catch (error) {
         console.error('Error listing wallpapers:', error);
         return NextResponse.json(

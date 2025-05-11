@@ -151,6 +151,7 @@ ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
             .replace(/-+/g, '-')
             .replace(/^-|-$/g, '');
 
+        // Use platform-specific file paths
         const fileName = `${safeName}-${Date.now()}.${wallpaper.format || 'jpg'}`;
         const filePath = path.join(wallpaperDir, fileName);
 
@@ -158,8 +159,25 @@ ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
         const imageData = Buffer.from(matches[2], 'base64');
         fs.writeFileSync(filePath, imageData);
 
-        // Set as wallpaper
-        await setWallpaper(filePath);
+        // Add error handling for platform-specific wallpaper setting issues
+        try {
+            await setWallpaper(filePath);
+        } catch (error) {
+            console.error('Platform-specific wallpaper setting error:', error);
+
+            // Provide a helpful message based on platform
+            let platformMessage = '';
+            if (process.platform === 'linux') {
+                platformMessage = 'On some Linux distros, you may need to install a supported desktop environment.';
+            } else if (process.platform === 'win32') {
+                platformMessage = 'Make sure you have proper permissions to change the wallpaper.';
+            }
+
+            return {
+                success: false,
+                error: `Failed to set wallpaper: ${error.message}. ${platformMessage}`
+            };
+        }
 
         return { success: true, filePath };
     } catch (error) {

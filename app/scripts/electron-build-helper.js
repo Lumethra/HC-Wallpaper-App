@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const os = require('os');
 
 // Generate remote wallpaper catalog
 console.log('Generating remote wallpaper catalog...');
@@ -24,10 +25,55 @@ try {
     process.exit(1);
 }
 
-// Run electron-builder
-console.log('Running electron-builder...');
+// Copy electron directory to out directory
+console.log('Copying electron directory to out directory...');
 try {
-    execSync('electron-builder', { stdio: 'inherit' });
+    // Create the electron directory if it doesn't exist
+    const outElectronDir = path.join(__dirname, '..', 'out', 'electron');
+    if (!fs.existsSync(outElectronDir)) {
+        fs.mkdirSync(outElectronDir, { recursive: true });
+    }
+
+    // Copy all files from electron directory
+    const electronDir = path.join(__dirname, '..', 'electron');
+    const electronFiles = fs.readdirSync(electronDir);
+
+    for (const file of electronFiles) {
+        const srcPath = path.join(electronDir, file);
+        const destPath = path.join(outElectronDir, file);
+
+        fs.copyFileSync(srcPath, destPath);
+        console.log(`✓ Copied electron/${file}`);
+    }
+
+    console.log('✓ Copied electron directory');
+} catch (err) {
+    console.error('Error copying electron directory:', err);
+    // Continue anyway to allow partial builds
+}
+
+// Detect current OS and build only for that platform
+console.log('Running electron-builder for current platform...');
+try {
+    const platform = process.platform;
+    let buildCommand;
+
+    switch (platform) {
+        case 'win32':
+            buildCommand = 'electron-builder --win portable --config.npmRebuild=false --config.win.signAndEditExecutable=false';
+            break;
+        case 'darwin':
+            buildCommand = 'electron-builder --mac dmg';
+            break;
+        case 'linux':
+            buildCommand = 'electron-builder --linux AppImage';
+            break;
+        default:
+            throw new Error(`Unsupported platform: ${platform}`);
+    }
+
+    console.log(`Building for ${platform}...`);
+    execSync(buildCommand, { stdio: 'inherit' });
     console.log('✓ Electron build completed');
 } catch (err) {
     console.error('Error running electron-builder:', err);
@@ -60,8 +106,12 @@ function findInstallerFiles(dir, filesList = []) {
         if (stat.isDirectory()) {
             findInstallerFiles(filePath, filesList);
         } else {
-            // Match installer file extensions
-            if (/\.(exe|dmg|AppImage|deb|rpm)$/i.test(file)) {
+            // Match only the main portable installer file
+            // For Windows: HC Wallpaper App-Portable-x.y.z.exe
+            // For macOS: HC Wallpaper App-x.y.z.dmg
+            // For Linux: hc-wallpaper-app-x.y.z.AppImage
+            if (/HC Wallpaper App.*\.(exe|dmg)$/i.test(file) ||
+                /hc-wallpaper-app.*\.(AppImage|deb)$/i.test(file)) {
                 filesList.push(filePath);
             }
         }

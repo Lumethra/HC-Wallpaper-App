@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Wallpaper } from '@/app/api/wallpapers/route';
-import { getWallpaperApiUrl, getWallpaperImageUrl } from '@/utils/api-config';
+import { getWallpaperImageUrl } from '@/utils/api-config';
 
 export default function WallpaperGallery() {
     const [wallpapers, setWallpapers] = useState<Wallpaper[]>([]);
@@ -22,24 +22,58 @@ export default function WallpaperGallery() {
         async function fetchWallpapers() {
             setLoading(true);
             try {
-                // First try to fetch from API (will be from Vercel in production)
-                const apiUrl = getWallpaperApiUrl(deviceType);
-                const response = await fetch(apiUrl);
+                let data;
 
-                if (response.ok) {
-                    const data = await response.json();
-                    setWallpapers(data.wallpapers || []);
-                } else {
-                    // If that fails, try to use the static file
-                    console.warn('API fetch failed, falling back to static catalog');
-                    const staticResponse = await fetch('/remote-wallpapers.json');
+                // Check if we're in production Electron app
+                const isElectronProduction =
+                    typeof window !== 'undefined' &&
+                    window.location.protocol === 'file:';
 
-                    if (staticResponse.ok) {
-                        const staticData = await staticResponse.json();
-                        setWallpapers(staticData[deviceType]?.wallpapers || []);
-                    } else {
-                        throw new Error('Failed to fetch wallpapers from static catalog');
+                if (isElectronProduction) {
+                    // In production Electron build, fetch directly from Vercel
+                    console.log('Fetching from Vercel deployment');
+                    try {
+                        const vercelResponse = await fetch(
+                            `https://hc-wallpaper-app.vercel.app/api/wallpapers?deviceType=${deviceType}`
+                        );
+
+                        if (vercelResponse.ok) {
+                            data = await vercelResponse.json();
+                        } else {
+                            // If Vercel API fails, fall back to static JSON
+                            console.warn('Vercel API failed, falling back to static data');
+                            const staticResponse = await fetch('/remote-wallpapers.json');
+                            if (staticResponse.ok) {
+                                data = await staticResponse.json();
+                            } else {
+                                throw new Error('Failed to fetch wallpapers from static data');
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Error fetching from Vercel:', err);
+                        throw err;
                     }
+                } else {
+                    // In development, use local API
+                    console.log('Fetching from local development API');
+                    const response = await fetch(`/api/wallpapers?deviceType=${deviceType}`);
+
+                    if (!response.ok) {
+                        throw new Error(`API request failed with status ${response.status}`);
+                    }
+
+                    data = await response.json();
+                }
+
+                // Handle different response formats
+                if (data && data[deviceType]?.wallpapers) {
+                    // New format from static export
+                    setWallpapers(data[deviceType].wallpapers);
+                } else if (data && data.wallpapers) {
+                    // Old format from development API
+                    setWallpapers(data.wallpapers);
+                } else {
+                    setWallpapers([]);
                 }
             } catch (err) {
                 console.error("Failed to fetch wallpapers:", err);
