@@ -2,7 +2,6 @@ import { readdir, stat } from 'fs/promises';
 import path from 'path';
 import { NextResponse } from 'next/server';
 
-// This setting allows Next.js to export the route statically
 export const dynamic = 'force-static';
 
 export interface Wallpaper {
@@ -15,10 +14,8 @@ export interface Wallpaper {
     deviceType: 'mobile' | 'desktop';
 }
 
-// Remove request parameter since it's not compatible with static export
 export async function GET() {
     try {
-        // Pre-generate data for both device types for static export
         const results: Record<string, any> = {};
 
         for (const deviceType of ['desktop', 'mobile']) {
@@ -38,13 +35,11 @@ export async function GET() {
                 files = await readdir(defaultDir);
             }
 
-            // Filter for image files
             const imageFiles = files.filter(file => {
                 const ext = path.extname(file).toLowerCase();
                 return ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext);
             });
 
-            // Process files and get metadata
             const wallpapersPromises = imageFiles.map(async (file) => {
                 const dirPath = path.join(
                     process.cwd(),

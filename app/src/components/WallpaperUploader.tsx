@@ -1,4 +1,3 @@
-// Create this file at: /app/src/components/WallpaperUploader.tsx
 "use client";
 
 import { useState, useRef } from 'react';
@@ -20,7 +19,6 @@ export default function WallpaperUploader() {
             const file = event.target.files[0];
             setSelectedFile(file);
 
-            // Create preview
             const reader = new FileReader();
             reader.onload = () => {
                 setPreviewUrl(reader.result as string);
@@ -62,7 +60,7 @@ export default function WallpaperUploader() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold mb-4">Set New Wallpaper</h2>
 
-            {/* Hidden file input */}
+            {/* LOL */}
             <input
                 ref={fileInputRef}
                 type="file"
@@ -71,7 +69,7 @@ export default function WallpaperUploader() {
                 className="hidden"
             />
 
-            {/* Image preview area */}
+            {/* You saw me */}
             <div
                 onClick={triggerFileInput}
                 className="border-2 border-dashed rounded-lg cursor-pointer mb-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -99,7 +97,7 @@ export default function WallpaperUploader() {
                 )}
             </div>
 
-            {/* File info */}
+            {/* If you see this, you are looking into the files */}
             {selectedFile && (
                 <div className="mb-4 text-sm text-gray-600 dark:text-gray-300">
                     <p className="truncate">{selectedFile.name}</p>
@@ -107,13 +105,13 @@ export default function WallpaperUploader() {
                 </div>
             )}
 
-            {/* Upload button */}
+            {/* I hate my code */}
             <button
                 onClick={handleUpload}
                 disabled={!selectedFile || isUploading}
                 className={`w-full py-2 px-4 rounded-md font-medium transition-colors ${!selectedFile || isUploading
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
                     }`}
             >
                 {isUploading ? (
@@ -127,13 +125,13 @@ export default function WallpaperUploader() {
                 ) : 'Set as Wallpaper'}
             </button>
 
-            {/* Status message */}
+            {/* i cooked here */}
             {status.message && (
                 <div className={`mt-4 p-3 rounded-md ${status.success === true
-                        ? 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-900'
-                        : status.success === false
-                            ? 'bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-900'
-                            : 'bg-gray-100 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'
+                    ? 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-900'
+                    : status.success === false
+                        ? 'bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-900'
+                        : 'bg-gray-100 text-gray-700 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'
                     }`}>
                     {status.message}
                 </div>

@@ -10,7 +10,6 @@ export default function WallpaperGallery() {
     const [error, setError] = useState<string | null>(null);
     const [deviceType, setDeviceType] = useState<'mobile' | 'desktop'>('desktop');
 
-    // Detect device type on client side
     useEffect(() => {
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
             .test(navigator.userAgent);
@@ -24,13 +23,11 @@ export default function WallpaperGallery() {
             try {
                 let data;
 
-                // Check if we're in production Electron app
                 const isElectronProduction =
                     typeof window !== 'undefined' &&
                     window.location.protocol === 'file:';
 
                 if (isElectronProduction) {
-                    // In production Electron build, fetch directly from Vercel
                     console.log('Fetching from Vercel deployment');
                     try {
                         const vercelResponse = await fetch(
@@ -40,7 +37,6 @@ export default function WallpaperGallery() {
                         if (vercelResponse.ok) {
                             data = await vercelResponse.json();
                         } else {
-                            // If Vercel API fails, fall back to static JSON
                             console.warn('Vercel API failed, falling back to static data');
                             const staticResponse = await fetch('/remote-wallpapers.json');
                             if (staticResponse.ok) {
@@ -54,7 +50,6 @@ export default function WallpaperGallery() {
                         throw err;
                     }
                 } else {
-                    // In development, use local API
                     console.log('Fetching from local development API');
                     const response = await fetch(`/api/wallpapers?deviceType=${deviceType}`);
 
@@ -65,12 +60,9 @@ export default function WallpaperGallery() {
                     data = await response.json();
                 }
 
-                // Handle different response formats
                 if (data && data[deviceType]?.wallpapers) {
-                    // New format from static export
                     setWallpapers(data[deviceType].wallpapers);
                 } else if (data && data.wallpapers) {
-                    // Old format from development API
                     setWallpapers(data.wallpapers);
                 } else {
                     setWallpapers([]);
@@ -84,7 +76,7 @@ export default function WallpaperGallery() {
         }
 
         fetchWallpapers();
-    }, [deviceType]); // Re-fetch when device type changes
+    }, [deviceType]);
 
     if (loading) {
         return <div className="p-8 text-center">Loading wallpapers...</div>;
@@ -98,14 +90,14 @@ export default function WallpaperGallery() {
         return <div className="p-8 text-center">No wallpapers found for {deviceType} devices.</div>;
     }
 
-    // Mobile-optimized view with grid layout
+    // Mobile wallpapers
     if (deviceType === 'mobile') {
         return (
             <div>
                 <div className="mb-4 text-sm text-gray-600">
                     Mobile Wallpapers
                 </div>
-                {/* Use flex for more adaptive layout */}
+                {/* HI */}
                 <div className="flex flex-wrap px-2">
                     {wallpapers.map(wallpaper => (
                         <div
@@ -113,7 +105,7 @@ export default function WallpaperGallery() {
                             className="w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 p-1.5 relative"
                         >
                             <div className="border rounded-lg overflow-hidden shadow-md h-full relative">
-                                {/* Image container with fixed height */}
+                                {/* <3 */}
                                 <div className="w-full aspect-[9/16] overflow-hidden">
                                     <img
                                         src={getWallpaperImageUrl(wallpaper.path)}
@@ -122,14 +114,14 @@ export default function WallpaperGallery() {
                                     />
                                 </div>
 
-                                {/* Semi-transparent overlay at the bottom */}
+                                {/* :D */}
                                 <div className="absolute bottom-0 left-0 right-0 bg-black/40 p-2 text-white">
                                     <h3 className="font-medium text-sm truncate">{wallpaper.name}</h3>
                                     <p className="text-xs text-gray-300">
                                         {(wallpaper.size / (1024 * 1024)).toFixed(1)} MB
                                     </p>
 
-                                    {/* Buttons on the overlay */}
+                                    {/* :) */}
                                     <div className="flex gap-2 mt-2">
                                         <a
                                             href={getWallpaperImageUrl(wallpaper.path)}
@@ -153,7 +145,7 @@ export default function WallpaperGallery() {
                     ))}
                 </div>
 
-                {/* Device type toggle for testing remains the same */}
+                {/* ^_^ */}
                 <div className="mt-6 p-4 border-t">
                     <p className="mb-2 text-sm">For testing: Switch device type</p>
                     <div className="flex space-x-2">
@@ -175,7 +167,7 @@ export default function WallpaperGallery() {
         );
     }
 
-    // Desktop view (original layout)
+    // Desktop wallpapers
     return (
         <div>
             <div className="mb-4 text-sm text-gray-600">
@@ -201,25 +193,20 @@ export default function WallpaperGallery() {
                                 onClick={async () => {
                                     if (typeof window !== 'undefined' && window.wallpaperAPI) {
                                         try {
-                                            // First, download the image
                                             const response = await fetch(getWallpaperImageUrl(wallpaper.path));
                                             if (!response.ok) {
                                                 throw new Error(`Failed to fetch image: ${response.status}`);
                                             }
 
-                                            // Get the image as a blob
                                             const blob = await response.blob();
 
-                                            // Convert to base64 data URL
                                             const reader = new FileReader();
                                             reader.readAsDataURL(blob);
 
                                             reader.onloadend = async () => {
                                                 const base64data = reader.result as string;
 
-                                                // Use the same approach as wallpaper uploader
                                                 try {
-                                                    // Save and set the wallpaper using the main process
                                                     const result = await window.wallpaperAPI.saveAndSetWallpaper({
                                                         name: wallpaper.name,
                                                         dataUrl: base64data,
@@ -252,7 +239,7 @@ export default function WallpaperGallery() {
                 ))}
             </div>
 
-            {/* Device type toggle for testing */}
+            {/* HIHI */}
             <div className="mt-6 p-4 border-t">
                 <p className="mb-2 text-sm">For testing: Switch device type</p>
                 <div className="flex space-x-2">

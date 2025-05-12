@@ -8,7 +8,6 @@ const { getWallpaper, setWallpaper } = require('wallpaper');
 let mainWindow;
 
 function createWindow() {
-    // Create the browser window
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -19,7 +18,6 @@ function createWindow() {
         }
     });
 
-    // Load the app
     const startUrl = isDev
         ? 'http://localhost:3000'
         : `file://${path.join(__dirname, '../out/index.html')}`;
@@ -49,7 +47,6 @@ app.on('activate', () => {
     }
 });
 
-// Handle getting current wallpaper
 ipcMain.handle('get-wallpaper', async () => {
     try {
         const currentWallpaper = await getWallpaper();
@@ -63,34 +60,26 @@ ipcMain.handle('get-wallpaper', async () => {
     }
 });
 
-// Handle setting wallpaper
 ipcMain.handle('set-wallpaper', async (_, imagePath) => {
     try {
-        // Check if this is a remote URL (from Vercel)
         if (imagePath.startsWith('http')) {
-            // We need to download the file first
             const response = await fetch(imagePath);
             if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
 
             const buffer = Buffer.from(await response.arrayBuffer());
 
-            // Save to temporary location
             const wallpaperDir = path.join(os.homedir(), '.wallpaper-app');
             if (!fs.existsSync(wallpaperDir)) {
                 fs.mkdirSync(wallpaperDir, { recursive: true });
             }
 
-            // Extract filename from URL
             const fileName = path.basename(new URL(imagePath).pathname);
             const localPath = path.join(wallpaperDir, fileName);
 
-            // Save the downloaded file
             fs.writeFileSync(localPath, buffer);
 
-            // Now set this local file as wallpaper
             await setWallpaper(localPath);
         } else {
-            // It's already a local path, just set it
             await setWallpaper(imagePath);
         }
 
@@ -104,10 +93,8 @@ ipcMain.handle('set-wallpaper', async (_, imagePath) => {
     }
 });
 
-// Save image from input
 ipcMain.handle('save-wallpaper-image', async (_, imageData) => {
     try {
-        // Create directory if it doesn't exist
         const wallpaperDir = path.join(os.homedir(), '.wallpaper-app');
         if (!fs.existsSync(wallpaperDir)) {
             fs.mkdirSync(wallpaperDir, { recursive: true });
@@ -129,43 +116,35 @@ ipcMain.handle('save-wallpaper-image', async (_, imageData) => {
     }
 });
 
-// Handle saving and setting wallpaper
 ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
     try {
-        // Create directory for wallpapers if it doesn't exist
         const wallpaperDir = path.join(os.homedir(), '.wallpaper-app', 'wallpapers');
         if (!fs.existsSync(wallpaperDir)) {
             fs.mkdirSync(wallpaperDir, { recursive: true });
         }
 
-        // Handle data URL
         const matches = wallpaper.dataUrl.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
         if (!matches) {
             throw new Error('Invalid data URL format');
         }
 
-        // Create a file name (sanitize the name)
         const safeName = wallpaper.name
             .toLowerCase()
             .replace(/[^a-z0-9]/g, '-')
             .replace(/-+/g, '-')
             .replace(/^-|-$/g, '');
 
-        // Use platform-specific file paths
         const fileName = `${safeName}-${Date.now()}.${wallpaper.format || 'jpg'}`;
         const filePath = path.join(wallpaperDir, fileName);
 
-        // Save the image file
         const imageData = Buffer.from(matches[2], 'base64');
         fs.writeFileSync(filePath, imageData);
 
-        // Add error handling for platform-specific wallpaper setting issues
         try {
             await setWallpaper(filePath);
         } catch (error) {
             console.error('Platform-specific wallpaper setting error:', error);
 
-            // Provide a helpful message based on platform
             let platformMessage = '';
             if (process.platform === 'linux') {
                 platformMessage = 'On some Linux distros, you may need to install a supported desktop environment.';

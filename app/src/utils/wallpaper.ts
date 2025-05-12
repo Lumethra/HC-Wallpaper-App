@@ -1,16 +1,10 @@
-// Complete utility functions for wallpaper operations
-
 export interface WallpaperResult {
     success: boolean;
     message: string;
     path?: string;
 }
 
-/**
- * Gets the current wallpaper path
- */
 export async function getCurrentWallpaper(): Promise<string> {
-    // Check if running in Electron
     if (typeof window !== 'undefined' && window.wallpaperAPI) {
         try {
             const result = await window.wallpaperAPI.getCurrentWallpaper();
@@ -26,15 +20,10 @@ export async function getCurrentWallpaper(): Promise<string> {
         }
     }
 
-    // Fallback for web browser
     return '';
 }
 
-/**
- * Sets a new wallpaper from a file path
- */
 export async function setWallpaper(imagePath: string): Promise<WallpaperResult> {
-    // Check if running in Electron
     if (typeof window !== 'undefined' && window.wallpaperAPI) {
         try {
             const result = await window.wallpaperAPI.setWallpaper(imagePath);
@@ -55,17 +44,11 @@ export async function setWallpaper(imagePath: string): Promise<WallpaperResult> 
     };
 }
 
-/**
- * Uploads and sets a new wallpaper from a File object
- */
 export async function uploadAndSetWallpaper(file: File): Promise<WallpaperResult> {
-    // Check if running in Electron
     if (typeof window !== 'undefined' && window.wallpaperAPI) {
         try {
-            // Convert file to array buffer for IPC transfer
             const arrayBuffer = await file.arrayBuffer();
 
-            // First save the file
             const saveResult = await window.wallpaperAPI.saveWallpaperImage({
                 buffer: arrayBuffer,
                 name: file.name,
@@ -78,7 +61,6 @@ export async function uploadAndSetWallpaper(file: File): Promise<WallpaperResult
                 };
             }
 
-            // Then set it as wallpaper
             const setResult = await window.wallpaperAPI.setWallpaper(saveResult.path!);
 
             return {

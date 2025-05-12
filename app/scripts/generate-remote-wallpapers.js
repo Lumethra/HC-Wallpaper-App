@@ -10,7 +10,6 @@ async function fetchWallpapers() {
 
     for (const deviceType of deviceTypes) {
         try {
-            // Fetch wallpaper data from Vercel deployment
             const url = `https://hc-wallpaper-app.vercel.app/api/wallpapers?deviceType=${deviceType}`;
 
             const data = await new Promise((resolve, reject) => {
@@ -39,11 +38,9 @@ async function fetchWallpapers() {
 
             console.log(`✓ Fetched ${data.wallpapers?.length || 0} ${deviceType} wallpapers`);
 
-            // Store the data
             result[deviceType] = data;
         } catch (error) {
             console.error(`Error fetching ${deviceType} wallpapers:`, error.message);
-            // Create empty fallback data
             result[deviceType] = {
                 wallpapers: [],
                 deviceType
@@ -51,7 +48,6 @@ async function fetchWallpapers() {
         }
     }
 
-    // Write the data to a JSON file
     const outputDir = path.join(process.cwd(), 'public');
     const outputPath = path.join(outputDir, 'remote-wallpapers.json');
 

@@ -1,4 +1,3 @@
-// Create this file at: /app/src/components/CurrentWallpaper.tsx
 "use client";
 
 import { useState, useEffect } from 'react';

@@ -3,7 +3,6 @@ const path = require('path');
 const { execSync } = require('child_process');
 const os = require('os');
 
-// Generate remote wallpaper catalog
 console.log('Generating remote wallpaper catalog...');
 try {
     require('./generate-remote-wallpapers');
@@ -12,7 +11,6 @@ try {
     console.error('Error generating remote wallpaper catalog:', err);
 }
 
-// Copy index.js to out directory
 console.log('Copying index.js to out directory...');
 try {
     fs.copyFileSync(
@@ -25,16 +23,13 @@ try {
     process.exit(1);
 }
 
-// Copy electron directory to out directory
 console.log('Copying electron directory to out directory...');
 try {
-    // Create the electron directory if it doesn't exist
     const outElectronDir = path.join(__dirname, '..', 'out', 'electron');
     if (!fs.existsSync(outElectronDir)) {
         fs.mkdirSync(outElectronDir, { recursive: true });
     }
 
-    // Copy all files from electron directory
     const electronDir = path.join(__dirname, '..', 'electron');
     const electronFiles = fs.readdirSync(electronDir);
 
@@ -49,10 +44,8 @@ try {
     console.log('✓ Copied electron directory');
 } catch (err) {
     console.error('Error copying electron directory:', err);
-    // Continue anyway to allow partial builds
 }
 
-// Detect current OS and build only for that platform
 console.log('Running electron-builder for current platform...');
 try {
     const platform = process.platform;
@@ -80,14 +73,12 @@ try {
     process.exit(1);
 }
 
-// Create installer directory if it doesn't exist
 const installerDir = path.join(__dirname, '..', 'installer');
 if (!fs.existsSync(installerDir)) {
     fs.mkdirSync(installerDir, { recursive: true });
     console.log('✓ Created installer directory');
 }
 
-// Find and copy installer files
 const distDir = path.join(__dirname, '..', 'dist');
 if (!fs.existsSync(distDir)) {
     console.error('Error: dist directory not found');
@@ -106,10 +97,6 @@ function findInstallerFiles(dir, filesList = []) {
         if (stat.isDirectory()) {
             findInstallerFiles(filePath, filesList);
         } else {
-            // Match only the main portable installer file
-            // For Windows: HC Wallpaper App-Portable-x.y.z.exe
-            // For macOS: HC Wallpaper App-x.y.z.dmg
-            // For Linux: hc-wallpaper-app-x.y.z.AppImage
             if (/HC Wallpaper App.*\.(exe|dmg)$/i.test(file) ||
                 /hc-wallpaper-app.*\.(AppImage|deb)$/i.test(file)) {
                 filesList.push(filePath);
