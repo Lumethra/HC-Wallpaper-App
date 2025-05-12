@@ -52,7 +52,6 @@ ipcMain.handle('get-wallpaper', async () => {
         const currentWallpaper = await getWallpaper();
         return { success: true, path: currentWallpaper };
     } catch (error) {
-        console.error('Error getting wallpaper:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error'
@@ -85,7 +84,6 @@ ipcMain.handle('set-wallpaper', async (_, imagePath) => {
 
         return { success: true };
     } catch (error) {
-        console.error('Error setting wallpaper:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error'
@@ -108,7 +106,6 @@ ipcMain.handle('save-wallpaper-image', async (_, imageData) => {
             path: imagePath
         };
     } catch (error) {
-        console.error('Error saving image:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error'
@@ -143,8 +140,6 @@ ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
         try {
             await setWallpaper(filePath);
         } catch (error) {
-            console.error('Platform-specific wallpaper setting error:', error);
-
             let platformMessage = '';
             if (process.platform === 'linux') {
                 platformMessage = 'On some Linux distros, you may need to install a supported desktop environment.';
@@ -160,7 +155,6 @@ ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
 
         return { success: true, filePath };
     } catch (error) {
-        console.error('Error saving or setting wallpaper:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error'

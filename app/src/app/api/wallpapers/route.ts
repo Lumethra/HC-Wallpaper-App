@@ -30,7 +30,6 @@ export async function GET() {
             try {
                 files = await readdir(wallpapersDir);
             } catch (err) {
-                console.warn(`Directory for ${deviceType} not found, using default wallpapers`);
                 const defaultDir = path.join(process.cwd(), 'public', 'wallpapers');
                 files = await readdir(defaultDir);
             }
@@ -97,7 +96,6 @@ export async function GET() {
 
         return NextResponse.json(results);
     } catch (error) {
-        console.error('Error listing wallpapers:', error);
         return NextResponse.json(
             { error: 'Failed to retrieve wallpapers' },
             { status: 500 }

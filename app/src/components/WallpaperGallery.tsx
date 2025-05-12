@@ -28,7 +28,6 @@ export default function WallpaperGallery() {
                     window.location.protocol === 'file:';
 
                 if (isElectronProduction) {
-                    console.log('Fetching from Vercel deployment');
                     try {
                         const vercelResponse = await fetch(
                             `https://hc-wallpaper-app.vercel.app/api/wallpapers?deviceType=${deviceType}`
@@ -37,7 +36,6 @@ export default function WallpaperGallery() {
                         if (vercelResponse.ok) {
                             data = await vercelResponse.json();
                         } else {
-                            console.warn('Vercel API failed, falling back to static data');
                             const staticResponse = await fetch('/remote-wallpapers.json');
                             if (staticResponse.ok) {
                                 data = await staticResponse.json();
@@ -46,11 +44,9 @@ export default function WallpaperGallery() {
                             }
                         }
                     } catch (err) {
-                        console.error('Error fetching from Vercel:', err);
                         throw err;
                     }
                 } else {
-                    console.log('Fetching from local development API');
                     const response = await fetch(`/api/wallpapers?deviceType=${deviceType}`);
 
                     if (!response.ok) {
@@ -60,15 +56,16 @@ export default function WallpaperGallery() {
                     data = await response.json();
                 }
 
+                let wallpaperData = [];
                 if (data && data[deviceType]?.wallpapers) {
-                    setWallpapers(data[deviceType].wallpapers);
+                    wallpaperData = data[deviceType].wallpapers;
                 } else if (data && data.wallpapers) {
-                    setWallpapers(data.wallpapers);
-                } else {
-                    setWallpapers([]);
+                    wallpaperData = data.wallpapers;
                 }
+
+                wallpaperData.sort((a: Wallpaper, b: Wallpaper) => a.name.localeCompare(b.name));
+                setWallpapers(wallpaperData);
             } catch (err) {
-                console.error("Failed to fetch wallpapers:", err);
                 setError("Failed to load wallpapers");
             } finally {
                 setLoading(false);
@@ -97,7 +94,6 @@ export default function WallpaperGallery() {
                 <div className="mb-4 text-sm text-gray-600">
                     Mobile Wallpapers
                 </div>
-                {/* HI */}
                 <div className="flex flex-wrap px-2">
                     {wallpapers.map(wallpaper => (
                         <div
@@ -105,7 +101,6 @@ export default function WallpaperGallery() {
                             className="w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 p-1.5 relative"
                         >
                             <div className="border rounded-lg overflow-hidden shadow-md h-full relative">
-                                {/* <3 */}
                                 <div className="w-full aspect-[9/16] overflow-hidden">
                                     <img
                                         src={getWallpaperImageUrl(wallpaper.path)}
@@ -114,14 +109,12 @@ export default function WallpaperGallery() {
                                     />
                                 </div>
 
-                                {/* :D */}
                                 <div className="absolute bottom-0 left-0 right-0 bg-black/40 p-2 text-white">
                                     <h3 className="font-medium text-sm truncate">{wallpaper.name}</h3>
                                     <p className="text-xs text-gray-300">
                                         {(wallpaper.size / (1024 * 1024)).toFixed(1)} MB
                                     </p>
 
-                                    {/* :) */}
                                     <div className="flex gap-2 mt-2">
                                         <a
                                             href={getWallpaperImageUrl(wallpaper.path)}
@@ -145,7 +138,6 @@ export default function WallpaperGallery() {
                     ))}
                 </div>
 
-                {/* ^_^ */}
                 <div className="mt-6 p-4 border-t">
                     <p className="mb-2 text-sm">For testing: Switch device type</p>
                     <div className="flex space-x-2">
@@ -220,12 +212,10 @@ export default function WallpaperGallery() {
                                                     }
                                                 } catch (err) {
                                                     alert('Error saving or setting wallpaper');
-                                                    console.error(err);
                                                 }
                                             };
                                         } catch (err) {
                                             alert(`Error downloading wallpaper: ${err instanceof Error ? err.message : 'Unknown error'}`);
-                                            console.error(err);
                                         }
                                     } else {
                                         alert('This feature is only available in the desktop app');
@@ -239,7 +229,6 @@ export default function WallpaperGallery() {
                 ))}
             </div>
 
-            {/* HIHI */}
             <div className="mt-6 p-4 border-t">
                 <p className="mb-2 text-sm">For testing: Switch device type</p>
                 <div className="flex space-x-2">

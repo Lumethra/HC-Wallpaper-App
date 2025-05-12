@@ -17,7 +17,6 @@ export default function CurrentWallpaper() {
                 setError('');
             } catch (err) {
                 setError('Failed to get current wallpaper');
-                console.error(err);
             } finally {
                 setIsLoading(false);
             }
@@ -52,7 +51,6 @@ export default function CurrentWallpaper() {
                     </p>
 
                     <div className="border rounded-lg overflow-hidden">
-                        {/* Note: file:// protocol won't work in browser but will in Electron */}
                         <img
                             src={`file://${wallpaperPath}`}
                             alt="Current wallpaper"

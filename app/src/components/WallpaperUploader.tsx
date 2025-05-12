@@ -60,7 +60,6 @@ export default function WallpaperUploader() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold mb-4">Set New Wallpaper</h2>
 
-            {/* LOL */}
             <input
                 ref={fileInputRef}
                 type="file"
@@ -69,7 +68,6 @@ export default function WallpaperUploader() {
                 className="hidden"
             />
 
-            {/* You saw me */}
             <div
                 onClick={triggerFileInput}
                 className="border-2 border-dashed rounded-lg cursor-pointer mb-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -97,7 +95,6 @@ export default function WallpaperUploader() {
                 )}
             </div>
 
-            {/* If you see this, you are looking into the files */}
             {selectedFile && (
                 <div className="mb-4 text-sm text-gray-600 dark:text-gray-300">
                     <p className="truncate">{selectedFile.name}</p>
@@ -105,7 +102,6 @@ export default function WallpaperUploader() {
                 </div>
             )}
 
-            {/* I hate my code */}
             <button
                 onClick={handleUpload}
                 disabled={!selectedFile || isUploading}
@@ -125,7 +121,6 @@ export default function WallpaperUploader() {
                 ) : 'Set as Wallpaper'}
             </button>
 
-            {/* i cooked here */}
             {status.message && (
                 <div className={`mt-4 p-3 rounded-md ${status.success === true
                     ? 'bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-900'
