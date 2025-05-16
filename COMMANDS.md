@@ -10,3 +10,8 @@
     - npm run electron:build
 - Clean (removes useless files (they are also .gitignore'ed))
     - npm run electron:clean
+
+### Wallpaper Version
+
+npm uninstall wallpaper
+npm install wallpaper@6.1.0
