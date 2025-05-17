@@ -4,6 +4,10 @@
     "directories": {
         "output": "dist"
     },
+    "asar": true,
+    "asarUnpack": [
+        "node_modules/wallpaper/**/*"
+    ],
     "files": [
         "out/**/*",
         "electron/**/*",
@@ -21,9 +25,22 @@
     },
     "linux": {
         "target": [
-            "AppImage",
-            "deb"
+            "AppImage"
         ]
     },
+    "extraResources": [
+        {
+            "from": "node_modules/electron/dist/locales",
+            "to": "locales"
+        },
+        {
+            "from": "node_modules/electron/dist/icudtl.dat",
+            "to": "icudtl.dat"
+        },
+        {
+            "from": "node_modules/wallpaper/windows-wallpaper.exe",
+            "to": "windows-wallpaper.exe"
+        }
+    ],
     "publish": null
 }
