@@ -281,7 +281,7 @@ public class Wallpaper {
 
 ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
     try {
-        const wallpaperDir = path.join(os.homedir(), '.wallpaper-app', 'wallpapers');
+        const wallpaperDir = path.join(os.homedir(), '.HC-Wallpaper-App');
         if (!fs.existsSync(wallpaperDir)) {
             fs.mkdirSync(wallpaperDir, { recursive: true });
         }
@@ -316,7 +316,7 @@ ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
             if (currentWallpaper &&
                 currentWallpaper !== filePath) {
 
-                const wallpaperBaseDir = path.join(os.homedir(), '.wallpaper-app');
+                const wallpaperBaseDir = path.join(os.homedir(), '.HC-Wallpaper-App');
 
                 const normalizedCurrent = path.normalize(currentWallpaper);
                 const normalizedBase = path.normalize(wallpaperBaseDir);
@@ -382,7 +382,7 @@ ipcMain.handle('set-wallpaper', async (_, imagePath) => {
 
             const buffer = Buffer.from(await response.arrayBuffer());
 
-            const wallpaperDir = path.join(os.homedir(), '.wallpaper-app');
+            const wallpaperDir = path.join(os.homedir(), '.HC-Wallpaper-App');
             if (!fs.existsSync(wallpaperDir)) {
                 fs.mkdirSync(wallpaperDir, { recursive: true });
             }
@@ -398,7 +398,7 @@ ipcMain.handle('set-wallpaper', async (_, imagePath) => {
         if (currentWallpaper &&
             currentWallpaper !== localPath) {
 
-            const wallpaperBaseDir = path.join(os.homedir(), '.wallpaper-app');
+            const wallpaperBaseDir = path.join(os.homedir(), '.HC-Wallpaper-App');
 
             const normalizedCurrent = path.normalize(currentWallpaper);
             const normalizedBase = path.normalize(wallpaperBaseDir);
@@ -425,7 +425,7 @@ ipcMain.handle('set-wallpaper', async (_, imagePath) => {
 
 ipcMain.handle('save-wallpaper-image', async (_, imageData) => {
     try {
-        const wallpaperDir = path.join(os.homedir(), '.wallpaper-app');
+        const wallpaperDir = path.join(os.homedir(), '.HC-Wallpaper-App');
         if (!fs.existsSync(wallpaperDir)) {
             fs.mkdirSync(wallpaperDir, { recursive: true });
         }
