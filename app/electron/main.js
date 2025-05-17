@@ -286,6 +286,13 @@ ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
             fs.mkdirSync(wallpaperDir, { recursive: true });
         }
 
+        let currentWallpaper = '';
+        try {
+            currentWallpaper = await getWallpaper();
+        } catch (err) {
+            // Continue 
+        }
+
         const matches = wallpaper.dataUrl.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
         if (!matches) {
             throw new Error('Invalid data URL format');
@@ -305,6 +312,25 @@ ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
 
         try {
             await safeSetWallpaper(filePath);
+
+            if (currentWallpaper &&
+                currentWallpaper !== filePath) {
+
+                const wallpaperBaseDir = path.join(os.homedir(), '.wallpaper-app');
+
+                const normalizedCurrent = path.normalize(currentWallpaper);
+                const normalizedBase = path.normalize(wallpaperBaseDir);
+
+                if (normalizedCurrent.startsWith(normalizedBase)) {
+                    try {
+                        if (fs.existsSync(currentWallpaper)) {
+                            fs.unlinkSync(currentWallpaper);
+                        }
+                    } catch (cleanupErr) {
+                        // Ignore 
+                    }
+                }
+            }
         } catch (error) {
             let platformMessage = '';
             if (process.platform === 'linux') {
@@ -342,6 +368,14 @@ ipcMain.handle('get-wallpaper', async () => {
 
 ipcMain.handle('set-wallpaper', async (_, imagePath) => {
     try {
+        let currentWallpaper = '';
+        try {
+            currentWallpaper = await getWallpaper();
+        } catch (err) {
+            // Continue
+        }
+
+        let localPath = imagePath;
         if (imagePath.startsWith('http')) {
             const response = await fetch(imagePath);
             if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
@@ -354,13 +388,30 @@ ipcMain.handle('set-wallpaper', async (_, imagePath) => {
             }
 
             const fileName = path.basename(new URL(imagePath).pathname);
-            const localPath = path.join(wallpaperDir, fileName);
+            localPath = path.join(wallpaperDir, fileName);
 
             fs.writeFileSync(localPath, buffer);
+        }
 
-            await setWallpaper(localPath);
-        } else {
-            await setWallpaper(imagePath);
+        await setWallpaper(localPath);
+
+        if (currentWallpaper &&
+            currentWallpaper !== localPath) {
+
+            const wallpaperBaseDir = path.join(os.homedir(), '.wallpaper-app');
+
+            const normalizedCurrent = path.normalize(currentWallpaper);
+            const normalizedBase = path.normalize(wallpaperBaseDir);
+
+            if (normalizedCurrent.startsWith(normalizedBase)) {
+                try {
+                    if (fs.existsSync(currentWallpaper)) {
+                        fs.unlinkSync(currentWallpaper);
+                    }
+                } catch (cleanupErr) {
+                    // Ignore 
+                }
+            }
         }
 
         return { success: true };

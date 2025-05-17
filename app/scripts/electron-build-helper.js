@@ -4,22 +4,29 @@ const { execSync } = require('child_process');
 const os = require('os');
 
 const platform = process.platform;
+console.log(`Building for platform: ${platform}`);
+
+console.log('Generating remote wallpaper catalog...');
 
 try {
     require('./generate-remote-wallpapers');
+    console.log('✓ Remote wallpaper catalog generated');
 } catch (err) {
     console.error('Error generating remote wallpaper catalog:', err);
 }
 
+console.log('Copying index.js to out directory...');
 try {
     fs.copyFileSync(
         path.join(__dirname, '..', 'index.js'),
         path.join(__dirname, '..', 'out', 'index.js')
     );
+    console.log('✓ Copied index.js');
 } catch (err) {
     console.error('Error copying index.js:', err);
 }
 
+console.log('Copying electron directory to out directory...');
 try {
     const outElectronDir = path.join(__dirname, '..', 'out', 'electron');
     if (!fs.existsSync(outElectronDir)) {
@@ -36,7 +43,10 @@ try {
         if (fs.statSync(srcPath).isDirectory()) continue;
 
         fs.copyFileSync(srcPath, destPath);
+        console.log(`✓ Copied electron/${file}`);
     }
+
+    console.log('✓ Copied electron directory');
 
     const fallbackPath = path.join(outElectronDir, 'fallback.html');
     fs.writeFileSync(fallbackPath, `
@@ -58,11 +68,14 @@ try {
         </html>
     `);
 
+    console.log('✓ Created fallback HTML');
+
     copyPlatformSpecificFiles(outElectronDir);
 } catch (err) {
     console.error('Error copying electron directory:', err);
 }
 
+console.log('Fixing HTML paths for Electron...');
 try {
     const indexPath = path.join(__dirname, '..', 'out', 'index.html');
 
@@ -71,6 +84,7 @@ try {
         html = html.replace(/"\/(_next\/static\/|images\/|favicon\.ico)/g, '"$1');
         html = html.replace('<head>', '<head>\n    <base href="./">');
         fs.writeFileSync(indexPath, html);
+        console.log('✓ Fixed HTML paths successfully');
     } else {
         console.error(`Index file not found at: ${indexPath}`);
     }
@@ -79,13 +93,22 @@ try {
 }
 
 function copyPlatformSpecificFiles(outDir) {
+    console.log(`Preparing platform-specific files for: ${platform}`);
+
     try {
         if (platform === 'win32') {
             const winBinary = path.join(__dirname, '..', 'node_modules', 'wallpaper', 'windows-wallpaper.exe');
             if (fs.existsSync(winBinary)) {
                 const destBinary = path.join(outDir, 'windows-wallpaper.exe');
                 fs.copyFileSync(winBinary, destBinary);
+                console.log('✓ Copied Windows wallpaper binary');
+            } else {
+                console.log('Windows wallpaper binary not found!');
             }
+        } else if (platform === 'darwin') {
+            console.log('✓ macOS uses AppleScript for wallpaper (no binary needed)');
+        } else if (platform === 'linux') {
+            console.log('✓ Linux handled by wallpaper module directly');
         }
     } catch (err) {
         console.error('Error copying platform-specific files:', err);
@@ -96,6 +119,7 @@ function updateElectronBuilderConfig() {
     try {
         const configPath = path.join(__dirname, '..', 'electron-builder.json');
         if (!fs.existsSync(configPath)) {
+            console.error('electron-builder.json not found!');
             return;
         }
 
@@ -106,25 +130,46 @@ function updateElectronBuilderConfig() {
             if (!config.asarUnpack.includes('node_modules/wallpaper/**/*')) {
                 config.asarUnpack.push('node_modules/wallpaper/**/*');
             }
+            console.log('✓ Added wallpaper module to asarUnpack');
         }
 
         if (!config.extraResources) {
             config.extraResources = [];
         }
 
-        let hasWallpaperBinary = false;
+        if (platform === 'win32') {
+            let hasWallpaperBinary = false;
+            for (const resource of config.extraResources) {
+                if (resource.from && resource.from.includes('wallpaper')) {
+                    hasWallpaperBinary = true;
+                    break;
+                }
+            }
+
+            if (!hasWallpaperBinary) {
+                config.extraResources.push({
+                    from: "node_modules/wallpaper/windows-wallpaper.exe",
+                    to: "windows-wallpaper.exe",
+                    filter: ["**/*"]
+                });
+                console.log('✓ Added Windows wallpaper binary to extraResources');
+            }
+        }
+
+        let hasICUData = false;
         for (const resource of config.extraResources) {
-            if (resource.from && resource.from.includes('wallpaper')) {
-                hasWallpaperBinary = true;
+            if (resource.from && resource.from.includes('icudtl.dat')) {
+                hasICUData = true;
                 break;
             }
         }
 
-        if (!hasWallpaperBinary && platform === 'win32') {
+        if (!hasICUData) {
             config.extraResources.push({
-                from: "node_modules/wallpaper/windows-wallpaper.exe",
-                to: "windows-wallpaper.exe"
+                from: "node_modules/electron/dist/icudtl.dat",
+                to: "icudtl.dat"
             });
+            console.log('✓ Added ICU data to extraResources');
         }
 
         fs.writeFileSync(configPath, JSON.stringify(config, null, 4));
@@ -149,11 +194,15 @@ function getBuildCommand() {
     return buildCommand;
 }
 
+console.log('Running electron-builder...');
+
 try {
     const buildCommand = getBuildCommand();
+    console.log(`Executing: ${buildCommand}`);
     execSync(buildCommand, {
         stdio: 'inherit'
     });
+    console.log('✓ Electron build completed');
 } catch (err) {
     console.error('Error running electron-builder:', err);
     process.exit(1);
