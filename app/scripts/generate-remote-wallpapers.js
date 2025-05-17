@@ -3,8 +3,6 @@ const path = require('path');
 const https = require('https');
 
 async function fetchWallpapers() {
-    console.log('Generating wallpaper catalog from Vercel deployment...');
-
     const deviceTypes = ['desktop', 'mobile'];
     const result = {};
 
@@ -36,11 +34,8 @@ async function fetchWallpapers() {
                 });
             });
 
-            console.log(`✓ Fetched ${data.wallpapers?.length || 0} ${deviceType} wallpapers`);
-
             result[deviceType] = data;
         } catch (error) {
-            console.error(`Error fetching ${deviceType} wallpapers:`, error.message);
             result[deviceType] = {
                 wallpapers: [],
                 deviceType
@@ -52,10 +47,8 @@ async function fetchWallpapers() {
     const outputPath = path.join(outputDir, 'remote-wallpapers.json');
 
     fs.writeFileSync(outputPath, JSON.stringify(result, null, 2));
-    console.log(`✓ Wallpaper catalog written to: ${outputPath}`);
 }
 
-fetchWallpapers().catch(err => {
-    console.error('Failed to generate wallpaper catalog:', err);
+fetchWallpapers().catch(() => {
     process.exit(1);
 });
