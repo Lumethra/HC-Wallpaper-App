@@ -28,7 +28,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libglib2.0-dev libgconf-2-4 rpm
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libglib2.0-dev rpm
       
       - name: Install dependencies
         working-directory: ./app
