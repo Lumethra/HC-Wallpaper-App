@@ -469,13 +469,18 @@ async function safeSetWallpaper(filePath) {
 
 async function tryOtherWallpaperMethods(filePath) {
     try {
+        if (process.platform === 'darwin') {
+            await setWallpaper(filePath);
+            return true;
+        }
+
         if (process.env.WALLPAPER_BINARY && process.platform === 'win32') {
             const { execFile } = require('child_process');
 
             return new Promise((resolve, reject) => {
                 execFile(process.env.WALLPAPER_BINARY, [filePath], (error) => {
                     if (error) {
-                        reject(error);
+                        setWallpaper(filePath).then(() => resolve(true)).catch(reject);
                     } else {
                         resolve(true);
                     }
@@ -486,7 +491,7 @@ async function tryOtherWallpaperMethods(filePath) {
         await setWallpaper(filePath);
         return true;
     } catch (err) {
-        throw new Error(`Wallpaper binary not found. ${err.message}`);
+        throw new Error(`Failed to set wallpaper: ${err.message}`);
     }
 }
 
