@@ -470,7 +470,43 @@ async function safeSetWallpaper(filePath) {
 async function tryOtherWallpaperMethods(filePath) {
     try {
         if (process.platform === 'darwin') {
-            await setWallpaper(filePath);
+            // Add debug logging
+            console.log('Using macOS wallpaper method with path:', filePath);
+            
+            // For macOS, we need to ensure the path is accessible and the wallpaper module can be found
+            try {
+                // Verify file exists and is accessible
+                if (!fs.existsSync(filePath)) {
+                    throw new Error(`File not found: ${filePath}`);
+                }
+                
+                // Import the module directly to avoid issues with packaged builds
+                const wallpaperModule = require('wallpaper');
+                await wallpaperModule.set(filePath);
+                console.log('Successfully set wallpaper on macOS');
+            } catch (err) {
+                console.error('Error in macOS wallpaper method:', err.message);
+                // Try executing the AppleScript directly as fallback
+                const { execFile } = require('child_process');
+                return new Promise((resolve, reject) => {
+                    const script = `
+                        tell application "System Events"
+                            tell every desktop
+                                set picture to "${filePath}"
+                            end tell
+                        end tell
+                    `;
+                    execFile('osascript', ['-e', script], (error) => {
+                        if (error) {
+                            console.error('AppleScript fallback error:', error);
+                            reject(error);
+                        } else {
+                            console.log('Successfully set wallpaper using AppleScript');
+                            resolve(true);
+                        }
+                    });
+                });
+            }
             return true;
         }
 
@@ -491,6 +527,7 @@ async function tryOtherWallpaperMethods(filePath) {
         await setWallpaper(filePath);
         return true;
     } catch (err) {
+        console.error('Wallpaper setting error:', err);
         throw new Error(`Failed to set wallpaper: ${err.message}`);
     }
 }
