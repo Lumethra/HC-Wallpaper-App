@@ -77,7 +77,7 @@ function createWindow() {
                 contextIsolation: true,
                 preload: path.join(__dirname, 'preload.js')
             },
-            icon: path.join(__dirname, '../public/icons/Abhay-App-Icon.jpg'),
+            icon: path.join(__dirname, '../public/icons/formatted-icons/icon-256x256.png'),
             show: false
         });
 
