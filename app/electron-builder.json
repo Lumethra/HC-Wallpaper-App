@@ -17,13 +17,13 @@
     "win": {
         "target": "portable",
         "artifactName": "${productName}-Portable-${version}.${ext}",
-        "icon": "public/icons/Abhay-App-Icon.ico"
+        "icon": "public/icons/formatted-icons/Abhay-App-Icon.ico"
     },
     "mac": {
         "target": [
             "dmg"
         ],
-        "icon": "public/icons/Abhay-App-Icon.icns"
+        "icon": "public/icons/formatted-icons/Abhay-App-Icon.icns"
     },
     "linux": {
         "target": [
@@ -32,7 +32,7 @@
             "rpm"
         ],
         "category": "Utility",
-        "icon": "public/icons/Abhay-App-Icon.png"
+        "icon": "public/icons/formatted-icons/Abhay-App-Icon.png"
     },
     "extraResources": [
         {

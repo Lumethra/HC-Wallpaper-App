@@ -6,6 +6,20 @@ const os = require('os');
 const platform = process.platform;
 console.log(`Building for platform: ${platform}`);
 
+// Convert icons properly by executing the script directly
+console.log('Converting application icons...');
+try {
+    // Execute the conversion script directly instead of requiring it
+    execSync('node scripts/convert-icons.js', {
+        stdio: 'inherit',
+        cwd: path.join(__dirname, '..')
+    });
+    console.log('✓ Application icons converted successfully');
+} catch (err) {
+    console.error('Error converting application icons:', err);
+    // Continue with the build even if icon conversion fails
+}
+
 console.log('Generating remote wallpaper catalog...');
 
 try {

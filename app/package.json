@@ -19,7 +19,8 @@
     "lint": "next lint",
     "electron:dev": "concurrently \"cross-env npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
     "electron:build": "cross-env ELECTRON=true next build && node scripts/electron-build-helper.js",
-    "electron:clean": "node scripts/clean.js"
+    "electron:clean": "node scripts/clean.js",
+    "electron:convertimg": "node scripts/convert-icons.js"
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",
@@ -38,7 +39,11 @@
     "cross-env": "^7.0.3",
     "electron": "^36.2.0",
     "electron-builder": "^26.0.12",
+    "jimp": "^1.6.0",
+    "png-to-ico": "^2.1.8",
+    "sharp": "^0.34.2",
     "tailwindcss": "^4",
+    "to-ico": "^1.0.1",
     "typescript": "^5.8.3",
     "wait-on": "^8.0.3"
   }
