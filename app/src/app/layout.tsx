@@ -16,6 +16,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "HC Wallpaper App",
   description: "Get wallpapers from #background-per-day",
+  icons: {
+    icon: [
+      { url: "/icons/Abhay-App-Icon.jpg", sizes: "any" },
+    ],
+    shortcut: "/icons/Abhay-App-Icon.jpg",
+  },
+  manifest: "/manifest.json",
+  themeColor: "#000033",
+  appleWebApp: {
+    title: "HC Wallpaper App",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default function RootLayout({
@@ -25,6 +37,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="shortcut icon" href="/icons/Abhay-App-Icon.jpg" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
