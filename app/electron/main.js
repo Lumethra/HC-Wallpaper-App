@@ -77,6 +77,7 @@ function createWindow() {
                 contextIsolation: true,
                 preload: path.join(__dirname, 'preload.js')
             },
+            icon: path.join(__dirname, '../public/icons/Abhay-App-Icon.jpg'),
             show: false
         });
 
@@ -470,23 +471,18 @@ async function safeSetWallpaper(filePath) {
 async function tryOtherWallpaperMethods(filePath) {
     try {
         if (process.platform === 'darwin') {
-            // Add debug logging
             console.log('Using macOS wallpaper method with path:', filePath);
-            
-            // For macOS, we need to ensure the path is accessible and the wallpaper module can be found
+
             try {
-                // Verify file exists and is accessible
                 if (!fs.existsSync(filePath)) {
                     throw new Error(`File not found: ${filePath}`);
                 }
-                
-                // Import the module directly to avoid issues with packaged builds
+
                 const wallpaperModule = require('wallpaper');
                 await wallpaperModule.set(filePath);
                 console.log('Successfully set wallpaper on macOS');
             } catch (err) {
                 console.error('Error in macOS wallpaper method:', err.message);
-                // Try executing the AppleScript directly as fallback
                 const { execFile } = require('child_process');
                 return new Promise((resolve, reject) => {
                     const script = `

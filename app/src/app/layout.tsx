@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from '@vercel/analytics/react';
 import "./globals.css";
@@ -13,20 +13,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#000033",
+};
+
 export const metadata: Metadata = {
   title: "HC Wallpaper App",
   description: "Get wallpapers from #background-per-day",
   icons: {
-    icon: [
-      { url: "/icons/Abhay-App-Icon.jpg", sizes: "any" },
-    ],
-    shortcut: "/icons/Abhay-App-Icon.jpg",
+    icon: [{ url: "/icons/Abhay-App-Icon.jpg" }],
+    shortcut: [{ url: "/icons/Abhay-App-Icon.jpg" }],
+    apple: [{ url: "/icons/Abhay-App-Icon.jpg" }],
   },
   manifest: "/manifest.json",
-  themeColor: "#000033",
   appleWebApp: {
     title: "HC Wallpaper App",
     statusBarStyle: "black-translucent",
+    capable: true,
+    startupImage: [{ url: "/icons/Abhay-App-Icon.jpg" }]
   },
 };
 
@@ -38,7 +42,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="icon" href="/icons/Abhay-App-Icon.jpg" />
         <link rel="shortcut icon" href="/icons/Abhay-App-Icon.jpg" />
+        <link rel="apple-touch-icon" href="/icons/Abhay-App-Icon.jpg" />
+        <meta name="msapplication-TileImage" content="/icons/Abhay-App-Icon.jpg" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

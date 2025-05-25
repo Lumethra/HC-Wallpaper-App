@@ -1,0 +1,21 @@
+{
+    "name": "HC Wallpaper App",
+    "short_name": "HC Wallpaper",
+    "description": "Get wallpapers from #background-per-day",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000033",
+    "theme_color": "#000033",
+    "icons": [
+        {
+            "src": "/icons/Abhay-App-Icon.jpg",
+            "sizes": "192x192",
+            "type": "image/jpeg"
+        },
+        {
+            "src": "/icons/Abhay-App-Icon.jpg",
+            "sizes": "512x512",
+            "type": "image/jpeg"
+        }
+    ]
+}
