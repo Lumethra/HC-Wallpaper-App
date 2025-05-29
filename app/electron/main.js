@@ -280,77 +280,64 @@ public class Wallpaper {
     } catch (err) { }
 }
 
+let lastWallpaperSetTimestamp = 0;
+const WALLPAPER_SET_COOLDOWN = 500; // 500ms cooldown
+
 ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
-    try {
-        const wallpaperDir = path.join(os.homedir(), '.HC-Wallpaper-App');
-        if (!fs.existsSync(wallpaperDir)) {
-            fs.mkdirSync(wallpaperDir, { recursive: true });
-        }
-
-        let currentWallpaper = '';
-        try {
-            currentWallpaper = await getWallpaper();
-        } catch (err) {
-            // Continue 
-        }
-
-        const matches = wallpaper.dataUrl.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
-        if (!matches) {
-            throw new Error('Invalid data URL format');
-        }
-
-        const safeName = wallpaper.name
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g, '-')
-            .replace(/-+/g, '-')
-            .replace(/^-|-$/g, '');
-
-        const fileName = `${safeName}-${Date.now()}.${wallpaper.format || 'jpg'}`;
-        const filePath = path.join(wallpaperDir, fileName);
-
-        const imageData = Buffer.from(matches[2], 'base64');
-        fs.writeFileSync(filePath, imageData);
-
-        try {
-            await safeSetWallpaper(filePath);
-
-            if (currentWallpaper &&
-                currentWallpaper !== filePath) {
-
-                const wallpaperBaseDir = path.join(os.homedir(), '.HC-Wallpaper-App');
-
-                const normalizedCurrent = path.normalize(currentWallpaper);
-                const normalizedBase = path.normalize(wallpaperBaseDir);
-
-                if (normalizedCurrent.startsWith(normalizedBase)) {
-                    try {
-                        if (fs.existsSync(currentWallpaper)) {
-                            fs.unlinkSync(currentWallpaper);
-                        }
-                    } catch (cleanupErr) {
-                        // Ignore 
-                    }
-                }
-            }
-        } catch (error) {
-            let platformMessage = '';
-            if (process.platform === 'linux') {
-                platformMessage = 'On some Linux distros, you may need to install a supported desktop environment.';
-            } else if (process.platform === 'win32') {
-                platformMessage = 'Make sure you have proper permissions to change the wallpaper.';
-            }
-
-            return {
-                success: false,
-                error: `Failed to set wallpaper: ${error.message}. ${platformMessage}`
-            };
-        }
-
-        return { success: true, filePath };
-    } catch (error) {
+    const now = Date.now();
+    if (now - lastWallpaperSetTimestamp < WALLPAPER_SET_COOLDOWN) {
         return {
             success: false,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: 'Please wait before setting another wallpaper'
+        };
+    }
+    lastWallpaperSetTimestamp = now;
+
+    const wallpaperDir = path.join(os.homedir(), '.HC-Wallpaper-App');
+    if (!fs.existsSync(wallpaperDir)) {
+        fs.mkdirSync(wallpaperDir, { recursive: true });
+    }
+
+    let currentWallpaper = '';
+    try {
+        currentWallpaper = await getWallpaper();
+    } catch (err) { }
+
+    const matches = wallpaper.dataUrl.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
+    if (!matches) {
+        return {
+            success: false,
+            error: 'Invalid data URL format'
+        };
+    }
+
+    const safeName = wallpaper.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+
+    const fileName = `${safeName}-${Date.now()}.${wallpaper.format || 'jpg'}`;
+    const filePath = path.join(wallpaperDir, fileName);
+
+    const imageData = Buffer.from(matches[2], 'base64');
+    fs.writeFileSync(filePath, imageData);
+
+    try {
+        await safeSetWallpaper(filePath);
+        await cleanupWallpapers();
+        return { success: true, filePath };
+    } catch (error) {
+        let platformMessage = '';
+        if (process.platform === 'linux') {
+            platformMessage = 'On some Linux distros, you may need to install a supported desktop environment.';
+        } else if (process.platform === 'win32') {
+            platformMessage = 'Make sure you have proper permissions to change the wallpaper.';
+        }
+
+        return {
+            success: false,
+            error: `Failed to set wallpaper: ${error.message}. ${platformMessage}`
         };
     }
 });
@@ -528,12 +515,40 @@ async function tryOtherWallpaperMethods(filePath) {
     }
 }
 
+async function cleanupWallpapers() {
+    let currentWallpaper = '';
+    try {
+        currentWallpaper = await getWallpaper();
+    } catch (err) { }
+
+    const wallpaperDir = path.join(os.homedir(), '.HC-Wallpaper-App');
+    if (!fs.existsSync(wallpaperDir)) {
+        return;
+    }
+
+    const files = fs.readdirSync(wallpaperDir);
+
+    for (const file of files) {
+        const filePath = path.join(wallpaperDir, file);
+
+        if (filePath === currentWallpaper) {
+            continue;
+        }
+
+        try {
+            fs.unlinkSync(filePath);
+            console.log(`Removed unused wallpaper: ${filePath}`);
+        } catch (err) { }
+    }
+}
+
 app.whenReady().then(() => {
     setupICUData();
     extractWallpaperBinary();
     createFallbackHTML();
     fixHtmlPaths();
     createWindow();
+    cleanupWallpapers();
 });
 
 app.on('window-all-closed', () => {
