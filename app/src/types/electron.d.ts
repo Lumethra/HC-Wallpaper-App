@@ -3,6 +3,7 @@ export interface WallpaperAPIResponse {
     path?: string;
     error?: string;
     filePath?: string;
+    dataUrl?: string;
 }
 
 declare global {
@@ -19,6 +20,7 @@ declare global {
                 dataUrl: string;
                 format?: string;
             }) => Promise<WallpaperAPIResponse>;
+            getWallpaperAsBase64: (imagePath: string) => Promise<WallpaperAPIResponse>;
         }
     }
 }

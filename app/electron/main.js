@@ -326,6 +326,7 @@ ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
     try {
         await safeSetWallpaper(filePath);
         await cleanupWallpapers();
+        mainWindow.webContents.send('wallpaper-update');
         return { success: true, filePath };
     } catch (error) {
         let platformMessage = '';
@@ -383,6 +384,8 @@ ipcMain.handle('set-wallpaper', async (_, imagePath) => {
 
         await setWallpaper(localPath);
 
+        mainWindow.webContents.send('wallpaper-update');
+
         if (currentWallpaper &&
             currentWallpaper !== localPath) {
 
@@ -432,6 +435,32 @@ ipcMain.handle('save-wallpaper-image', async (_, imageData) => {
         };
     }
 });
+
+ipcMain.handle('get-wallpaper-as-base64', async (_, imagePath) => {
+    if (!fs.existsSync(imagePath)) {
+        return { success: false, error: 'File not found' };
+    }
+
+    const imageBuffer = fs.readFileSync(imagePath);
+
+    const extension = path.extname(imagePath).toLowerCase().substring(1);
+    const mimeType = getTypeFromExtension(extension);
+
+    const dataUrl = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
+    return { success: true, dataUrl };
+});
+
+function getTypeFromExtension(extension) {
+    const mimeTypes = {
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        png: 'image/png',
+        gif: 'image/gif',
+        webp: 'image/webp'
+    };
+
+    return mimeTypes[extension] || 'image/jpeg';
+}
 
 async function safeSetWallpaper(filePath) {
     if (global.useEmergencyWallpaperSetter && process.platform === 'win32') {

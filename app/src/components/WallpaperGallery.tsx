@@ -9,6 +9,8 @@ type Wallpaper = {
     path: string;
     format: string;
     size: number;
+    displayName?: string;
+    artist?: string;
 }
 
 export default function WallpaperGallery() {
@@ -53,51 +55,122 @@ export default function WallpaperGallery() {
         );
     }
 
+    function parseWallpaperName(wallpaper: Wallpaper): Wallpaper {
+        const nameWithoutExt = wallpaper.name.replace(/\.[^/.]+$/, "");
+
+        const spaceSeparatedMatch = nameWithoutExt.match(/^(\w+)\s+(.+)$/i);
+
+        if (spaceSeparatedMatch) {
+            const artistPart = spaceSeparatedMatch[1];
+            const titlePart = spaceSeparatedMatch[2];
+
+            const formattedArtist = artistPart.charAt(0).toUpperCase() + artistPart.slice(1).toLowerCase();
+            const formattedName = titlePart.split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+
+            return {
+                ...wallpaper,
+                displayName: formattedName,
+                artist: formattedArtist
+            };
+        } else {
+            const underscoreParts = nameWithoutExt.split('_');
+
+            if (underscoreParts.length > 1) {
+                const artistPart = underscoreParts[0];
+                const titlePart = underscoreParts.slice(1).join('_');
+
+                const formattedArtist = artistPart
+                    .split('-')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+
+                const formattedName = titlePart
+                    .split('-')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+
+                return {
+                    ...wallpaper,
+                    displayName: formattedName,
+                    artist: formattedArtist
+                };
+            } else {
+                const formattedName = nameWithoutExt
+                    .split('-')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join(' ');
+
+                return {
+                    ...wallpaper,
+                    displayName: formattedName
+                };
+            }
+        }
+    }
+
     useEffect(() => {
         let isActive = true;
 
         async function getWallpapers() {
-            try {
-                setLoading(true);
+            setLoading(true);
 
-                const isApp = window.location.protocol === 'file:';
+            const isApp = window.location.protocol === 'file:';
 
-                // hehe, internal advertisment, go and check out the website AND STOP LOOKING AT MY CODE, I AM EMBARRASSED, I KNOW THIS IS TRASH
-                const vercelPage = isApp ? 'https://hc-wallpaper-app.vercel.app' : '';
+            const vercelPage = isApp ? 'https://hc-wallpaper-app.vercel.app' : '';
 
-                let response = await fetch(`${vercelPage}/api/wallpapers?deviceType=${deviceType}`);
+            let response = await fetch(`${vercelPage}/api/wallpapers?deviceType=${deviceType}`).catch(error => {
+                console.error("Failed to fetch:", error);
+                return null;
+            });
 
-                if (!response.ok && isApp) {
-                    console.log("API request failed, trying local fallback...");
-                    response = await fetch('/remote-wallpapers.json');
-                }
+            if (!response?.ok && isApp) {
+                console.log("API request failed, trying local fallback...");
+                response = await fetch('/remote-wallpapers.json').catch(error => {
+                    console.error("Failed to fetch fallback:", error);
+                    return null;
+                });
+            }
 
-                if (!response.ok) throw new Error("Response not OK, check your internet, i guess?");
-
-                const data = await response.json();
-
-                let items = [];
-                if (data[deviceType]?.wallpapers) {
-                    items = data[deviceType].wallpapers;
-                } else if (data.wallpapers) {
-                    items = data.wallpapers;
-                }
-
-                /* why are there errors? why is it working like this? urgh, i just let it be, what vs code says should be right */
-                items.sort((a: { name: string; }, b: { name: any; }) => a.name.localeCompare(b.name));
-
-                if (isActive) {
-                    setWallpapers(items);
-                }
-            } catch (error) {
-                console.error("Wallpaper not loaded, this should be the error:", error);
+            if (!response?.ok) {
                 if (isActive) {
                     setError("i couldn't load the wallpapers");
-                }
-            } finally {
-                if (isActive) {
                     setLoading(false);
                 }
+                return;
+            }
+
+            const data = await response.json();
+
+            let items = [];
+            if (data[deviceType]?.wallpapers) {
+                items = data[deviceType].wallpapers;
+            } else if (data.wallpapers) {
+                items = data.wallpapers;
+            }
+
+            const processedItems = items.map(parseWallpaperName);
+
+            /* why are there errors? why is it working like this? urgh, i just let it be, what vs code says should be right */
+            processedItems.sort((a: { artist: string; displayName: any; name: any; }, b: { artist: string; displayName: any; name: any; }) => {
+                // First i sort by artist name (if it is there, i dare you not to be there)
+                const artistA = a.artist || '';
+                const artistB = b.artist || '';
+
+                if (artistA !== artistB) {
+                    return artistA.localeCompare(artistB);
+                }
+
+                // Then sort by displayName as usual
+                const displayNameA = a.displayName || a.name;
+                const displayNameB = b.displayName || b.name;
+                return displayNameA.localeCompare(displayNameB);
+            });
+
+            if (isActive) {
+                setWallpapers(processedItems);
+                setLoading(false);
             }
         }
 
@@ -127,15 +200,25 @@ export default function WallpaperGallery() {
                                 <div className="w-full aspect-[9/16] overflow-hidden">
                                     <img
                                         src={getWallpaperImageUrl(wallpaper.path)}
-                                        alt={wallpaper.name}
+                                        alt={wallpaper.displayName || wallpaper.name}
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
 
-                                <div className="absolute bottom-0 left-0 right-0 bg-black/40 p-2 text-white">
-                                    <h3 className="font-medium text-sm truncate">{wallpaper.name}</h3>
-                                    <p className="text-xs text-gray-300">
-                                        {Math.round(wallpaper.size / 1024 / 1024 * 10) / 10} MB
+                                <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-2 text-white">
+                                    <h3 className="font-medium text-sm truncate text-purple-300">
+                                        {wallpaper.displayName || wallpaper.name}
+                                    </h3>
+                                    <p className="text-xs truncate">
+                                        {wallpaper.artist && (
+                                            <span className="font-medium text-teal-300">{wallpaper.artist}</span>
+                                        )}
+                                        {wallpaper.artist && (
+                                            <span className="text-indigo-300"> • </span>
+                                        )}
+                                        <span className="text-amber-300">{Math.round(wallpaper.size / 1024 / 1024 * 10) / 10} MB</span>
+                                        <span className="text-indigo-300"> • </span>
+                                        <span className="text-pink-300">{wallpaper.format}</span>
                                     </p>
 
                                     <div className="flex gap-2 mt-2">
@@ -146,12 +229,6 @@ export default function WallpaperGallery() {
                                         >
                                             Download
                                         </a>
-                                        <button
-                                            className="flex-1 px-2 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-xs"
-                                            onClick={() => alert('To set as wallpaper: download the image, then use your device settings to set it as wallpaper.')}
-                                        >
-                                            Info
-                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -177,14 +254,24 @@ export default function WallpaperGallery() {
                         <div className="relative h-48">
                             <img
                                 src={getWallpaperImageUrl(wallpaper.path)}
-                                alt={wallpaper.name}
+                                alt={wallpaper.displayName || wallpaper.name}
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <div className="p-4">
-                            <h3 className="font-medium">{wallpaper.name}</h3>
-                            <p className="text-sm text-gray-500">
-                                {(wallpaper.size / 1048576).toFixed(2)} MB • {wallpaper.format}
+                        <div className="p-4 bg-gray-800">
+                            <h3 className="font-medium mb-1 text-purple-300">
+                                {wallpaper.displayName || wallpaper.name}
+                            </h3>
+                            <p className="text-sm">
+                                {wallpaper.artist && (
+                                    <span className="font-medium text-teal-300">{wallpaper.artist}</span>
+                                )}
+                                {wallpaper.artist && (
+                                    <span className="text-indigo-300"> • </span>
+                                )}
+                                <span className="text-amber-300">{(wallpaper.size / 1048576).toFixed(2)} MB</span>
+                                <span className="text-indigo-300"> • </span>
+                                <span className="text-pink-300">{wallpaper.format}</span>
                             </p>
                             <button
                                 className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { uploadAndSetWallpaper } from '../utils/wallpaper';
 
 export default function WallpaperUploader() {
@@ -14,14 +14,31 @@ export default function WallpaperUploader() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Clean up resources when component unmounts
+    useEffect(() => {
+        return () => {
+            if (previewUrl && previewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(previewUrl);
+            }
+        };
+    }, [previewUrl]);
+
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
             const file = event.target.files[0];
             setSelectedFile(file);
 
+            // Clean previous URL if exists
+            if (previewUrl && previewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(previewUrl);
+            }
+
+            // Use FileReader instead of URL.createObjectURL
             const reader = new FileReader();
-            reader.onload = () => {
-                setPreviewUrl(reader.result as string);
+            reader.onload = (e) => {
+                if (e.target && typeof e.target.result === 'string') {
+                    setPreviewUrl(e.target.result);
+                }
             };
             reader.readAsDataURL(file);
         }
@@ -73,15 +90,15 @@ export default function WallpaperUploader() {
                 className="border-2 border-dashed rounded-lg cursor-pointer mb-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
             >
                 {previewUrl ? (
-                    <div className="relative">
+                    <div className="relative group">
                         <img
                             src={previewUrl}
                             alt="Wallpaper preview"
-                            className="w-full h-auto rounded-lg"
-                            style={{ maxHeight: '240px' }}
+                            className="w-full h-auto rounded-lg object-contain"
+                            style={{ maxHeight: '240px', backgroundColor: '#1a1a1a' }}
                         />
-                        <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 flex items-center justify-center rounded-lg transition-all">
-                            <span className="text-white opacity-0 hover:opacity-100">Change image</span>
+                        <div className="absolute inset-0 bg-opacity-0 group-hover:bg-black/40 flex items-center justify-center rounded-lg transition-all">
+                            <span className="text-white opacity-0 group-hover:opacity-100 font-medium">Change image</span>
                         </div>
                     </div>
                 ) : (
