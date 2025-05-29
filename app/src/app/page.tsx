@@ -1,6 +1,7 @@
 import WallpaperGallery from '@/components/WallpaperGallery';
 import WallpaperUploader from '@/components/WallpaperUploader';
 import CurrentWallpaper from '@/components/CurrentWallpaper';
+import RotateWallpaper from '@/components/RotateWallpaper';
 
 export default function Home() {
   return (
@@ -12,6 +13,11 @@ export default function Home() {
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Available Wallpapers</h2>
         <WallpaperGallery />
+      </div>
+
+      <div className='mb-8'>
+        <h2 className='text-2xl font-semibold mb-4'>Rotate wallpapers</h2>
+        <RotateWallpaper />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

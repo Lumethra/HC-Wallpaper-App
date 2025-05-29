@@ -1,99 +1,122 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Wallpaper } from '@/app/api/wallpapers/route';
 import { getWallpaperImageUrl } from '@/utils/api-config';
+
+type Wallpaper = {
+    id: string;
+    name: string;
+    path: string;
+    format: string;
+    size: number;
+}
 
 export default function WallpaperGallery() {
     const [wallpapers, setWallpapers] = useState<Wallpaper[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [deviceType, setDeviceType] = useState<'mobile' | 'desktop'>('desktop');
+    const [deviceType, setDeviceType] = useState('desktop');
 
     useEffect(() => {
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
-            .test(navigator.userAgent);
-
+        const isMobile = /iPhone|iPad|Android/.test(navigator.userAgent);
         setDeviceType(isMobile ? 'mobile' : 'desktop');
     }, []);
 
+    // why is this needed to keep vs code quiet, it is working ;(
+    type DeviceTypeSwitcherProps = {
+        deviceType: string;
+        setDeviceType: (type: string) => void;
+    };
+    // VS code, are you happy now? i just implemented urs 
+
+    // switchi switchi !! device switchi, but it cannot change the hardware sadly 
+    // VS code, you just added DeviceTypeSwitcherProps, I don't think, that is necessary, but fine, here it is
+    function DeviceTypeSwitcher({ deviceType, setDeviceType }: DeviceTypeSwitcherProps) {
+        return (
+            <div className="mt-6 p-4 border-t">
+                <p className="mb-2 text-sm">Switch wallpaper type:</p>
+                <div className="flex space-x-2">
+                    <button
+                        className={`px-3 py-1 rounded ${deviceType === 'desktop' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
+                        onClick={() => setDeviceType('desktop')}
+                    >
+                        Desktop
+                    </button>
+                    <button
+                        className={`px-3 py-1 rounded ${deviceType === 'mobile' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
+                        onClick={() => setDeviceType('mobile')}
+                    >
+                        Mobile
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     useEffect(() => {
-        async function fetchWallpapers() {
-            setLoading(true);
+        let isActive = true;
+
+        async function getWallpapers() {
             try {
-                let data;
+                setLoading(true);
 
-                const isElectronProduction =
-                    typeof window !== 'undefined' &&
-                    window.location.protocol === 'file:';
+                const isApp = window.location.protocol === 'file:';
 
-                if (isElectronProduction) {
-                    try {
-                        const vercelResponse = await fetch(
-                            `https://hc-wallpaper-app.vercel.app/api/wallpapers?deviceType=${deviceType}`
-                        );
+                // hehe, internal advertisment, go and check out the website AND STOP LOOKING AT MY CODE, I AM EMBARRASSED, I KNOW THIS IS TRASH
+                const vercelPage = isApp ? 'https://hc-wallpaper-app.vercel.app' : '';
 
-                        if (vercelResponse.ok) {
-                            data = await vercelResponse.json();
-                        } else {
-                            const staticResponse = await fetch('/remote-wallpapers.json');
-                            if (staticResponse.ok) {
-                                data = await staticResponse.json();
-                            } else {
-                                throw new Error('Failed to fetch wallpapers from static data');
-                            }
-                        }
-                    } catch (err) {
-                        throw err;
-                    }
-                } else {
-                    const response = await fetch(`/api/wallpapers?deviceType=${deviceType}`);
+                let response = await fetch(`${vercelPage}/api/wallpapers?deviceType=${deviceType}`);
 
-                    if (!response.ok) {
-                        throw new Error(`API request failed with status ${response.status}`);
-                    }
-
-                    data = await response.json();
+                if (!response.ok && isApp) {
+                    console.log("API request failed, trying local fallback...");
+                    response = await fetch('/remote-wallpapers.json');
                 }
 
-                let wallpaperData = [];
-                if (data && data[deviceType]?.wallpapers) {
-                    wallpaperData = data[deviceType].wallpapers;
-                } else if (data && data.wallpapers) {
-                    wallpaperData = data.wallpapers;
+                if (!response.ok) throw new Error("Response not OK, check your internet, i guess?");
+
+                const data = await response.json();
+
+                let items = [];
+                if (data[deviceType]?.wallpapers) {
+                    items = data[deviceType].wallpapers;
+                } else if (data.wallpapers) {
+                    items = data.wallpapers;
                 }
 
-                wallpaperData.sort((a: Wallpaper, b: Wallpaper) => a.name.localeCompare(b.name));
-                setWallpapers(wallpaperData);
-            } catch (err) {
-                setError("Failed to load wallpapers");
+                /* why are there errors? why is it working like this? urgh, i just let it be, what vs code says should be right */
+                items.sort((a: { name: string; }, b: { name: any; }) => a.name.localeCompare(b.name));
+
+                if (isActive) {
+                    setWallpapers(items);
+                }
+            } catch (error) {
+                console.error("Wallpaper not loaded, this should be the error:", error);
+                if (isActive) {
+                    setError("i couldn't load the wallpapers");
+                }
             } finally {
-                setLoading(false);
+                if (isActive) {
+                    setLoading(false);
+                }
             }
         }
 
-        fetchWallpapers();
+        getWallpapers();
+
+        return () => {
+            isActive = false;
+        };
     }, [deviceType]);
 
-    if (loading) {
-        return <div className="p-8 text-center">Loading wallpapers...</div>;
-    }
+    if (loading) return <div className="p-8 text-center">Loading the wallpapers...</div>;
+    if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+    if (!wallpapers.length) return <div className="p-8 text-center">No wallpapers there, congrats, you broke the code.</div>;
 
-    if (error) {
-        return <div className="p-8 text-center text-red-500">{error}</div>;
-    }
-
-    if (wallpapers.length === 0) {
-        return <div className="p-8 text-center">No wallpapers found for {deviceType} devices.</div>;
-    }
-
-    // Mobile wallpapers
+    // mobile shit 
     if (deviceType === 'mobile') {
         return (
             <div>
-                <div className="mb-4 text-sm text-gray-600">
-                    Mobile Wallpapers
-                </div>
+                <div className="mb-4 text-sm text-gray-600">Mobile Wallpapers</div>
                 <div className="flex flex-wrap px-2">
                     {wallpapers.map(wallpaper => (
                         <div
@@ -112,7 +135,7 @@ export default function WallpaperGallery() {
                                 <div className="absolute bottom-0 left-0 right-0 bg-black/40 p-2 text-white">
                                     <h3 className="font-medium text-sm truncate">{wallpaper.name}</h3>
                                     <p className="text-xs text-gray-300">
-                                        {(wallpaper.size / (1024 * 1024)).toFixed(1)} MB
+                                        {Math.round(wallpaper.size / 1024 / 1024 * 10) / 10} MB
                                     </p>
 
                                     <div className="flex gap-2 mt-2">
@@ -125,9 +148,7 @@ export default function WallpaperGallery() {
                                         </a>
                                         <button
                                             className="flex-1 px-2 py-1 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 text-xs"
-                                            onClick={() => {
-                                                alert('To set as wallpaper: download the image, then use your device settings to set it as wallpaper.');
-                                            }}
+                                            onClick={() => alert('To set as wallpaper: download the image, then use your device settings to set it as wallpaper.')}
                                         >
                                             Info
                                         </button>
@@ -138,28 +159,13 @@ export default function WallpaperGallery() {
                     ))}
                 </div>
 
-                <div className="mt-6 p-4 border-t">
-                    <p className="mb-2 text-sm">For testing: Switch device type</p>
-                    <div className="flex space-x-2">
-                        <button
-                            className={`px-3 py-1 rounded ${deviceType === ('desktop' as string) ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
-                            onClick={() => setDeviceType('desktop')}
-                        >
-                            Desktop
-                        </button>
-                        <button
-                            className={`px-3 py-1 rounded ${deviceType === ('mobile' as string) ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
-                            onClick={() => setDeviceType('mobile')}
-                        >
-                            Mobile
-                        </button>
-                    </div>
-                </div>
+                { }
+                <DeviceTypeSwitcher deviceType={deviceType} setDeviceType={setDeviceType} />
             </div>
         );
     }
 
-    // Desktop wallpapers
+    // desktop shit 
     return (
         <div>
             <div className="mb-4 text-sm text-gray-600">
@@ -178,49 +184,11 @@ export default function WallpaperGallery() {
                         <div className="p-4">
                             <h3 className="font-medium">{wallpaper.name}</h3>
                             <p className="text-sm text-gray-500">
-                                {(wallpaper.size / (1024 * 1024)).toFixed(2)} MB • {wallpaper.format}
+                                {(wallpaper.size / 1048576).toFixed(2)} MB • {wallpaper.format}
                             </p>
                             <button
                                 className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"
-                                onClick={async () => {
-                                    if (typeof window !== 'undefined' && window.wallpaperAPI) {
-                                        try {
-                                            const response = await fetch(getWallpaperImageUrl(wallpaper.path));
-                                            if (!response.ok) {
-                                                throw new Error(`Failed to fetch image: ${response.status}`);
-                                            }
-
-                                            const blob = await response.blob();
-
-                                            const reader = new FileReader();
-                                            reader.readAsDataURL(blob);
-
-                                            reader.onloadend = async () => {
-                                                const base64data = reader.result as string;
-
-                                                try {
-                                                    const result = await window.wallpaperAPI.saveAndSetWallpaper({
-                                                        name: wallpaper.name,
-                                                        dataUrl: base64data,
-                                                        format: wallpaper.format
-                                                    });
-
-                                                    if (result.success) {
-                                                        alert('Wallpaper set successfully!');
-                                                    } else {
-                                                        alert(`Failed to set wallpaper: ${result.error}`);
-                                                    }
-                                                } catch (err) {
-                                                    alert('Error saving or setting wallpaper');
-                                                }
-                                            };
-                                        } catch (err) {
-                                            alert(`Error downloading wallpaper: ${err instanceof Error ? err.message : 'Unknown error'}`);
-                                        }
-                                    } else {
-                                        alert('This feature is only available in the desktop app');
-                                    }
-                                }}
+                                onClick={() => handleSetWallpaper(wallpaper)}
                             >
                                 Set as Wallpaper
                             </button>
@@ -229,23 +197,52 @@ export default function WallpaperGallery() {
                 ))}
             </div>
 
-            <div className="mt-6 p-4 border-t">
-                <p className="mb-2 text-sm">For testing: Switch device type</p>
-                <div className="flex space-x-2">
-                    <button
-                        className={`px-3 py-1 rounded ${deviceType === ('desktop' as string) ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
-                        onClick={() => setDeviceType('desktop')}
-                    >
-                        Desktop
-                    </button>
-                    <button
-                        className={`px-3 py-1 rounded ${deviceType === ('mobile' as string) ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
-                        onClick={() => setDeviceType('mobile')}
-                    >
-                        Mobile
-                    </button>
-                </div>
-            </div>
+            { }
+            <DeviceTypeSwitcher deviceType={deviceType} setDeviceType={setDeviceType} />
         </div>
     );
+
+    // stoooopp, don't scroll down, fix your own code or do something useful, this is my code, not yours!
+
+    function handleSetWallpaper(wallpaper: Wallpaper) {
+        if (!window.wallpaperAPI) {
+            alert('DOWNLOAD THE DESKTOP APP!!');
+            return;
+        }
+
+        const setWallpaper = async () => {
+            let response;
+
+            response = await fetch(getWallpaperImageUrl(wallpaper.path));
+            if (!response.ok) {
+                console.error("Failed to download wallpaper");
+                alert('Network problem. Check your connection?');
+                return;
+            }
+
+            const bobTheBlob = await response.blob();
+
+            const reader = new FileReader();
+            const dataUrl = await new Promise<string>((resolve) => {
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.readAsDataURL(bobTheBlob);
+            });
+
+            const result = await window.wallpaperAPI.saveAndSetWallpaper({
+                name: wallpaper.name,
+                dataUrl: dataUrl,
+                format: wallpaper.format
+            });
+
+            if (result.success) {
+                alert('Got it! Wallpaper applied.');
+            } else if (result.error && !result.error.includes('Please wait before setting')) {
+                alert('Hmm, something went wrong: ' + result.error);
+            }
+        };
+
+        setWallpaper();
+    }
 }
+
+//fine, you reached the end
