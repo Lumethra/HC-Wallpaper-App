@@ -1,31 +1,79 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getCurrentWallpaper } from '../utils/wallpaper';
 
 export default function CurrentWallpaper() {
-    const [wallpaperPath, setWallpaperPath] = useState<string>('');
-    const [isLoading, setIsLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string>('');
+    const [wallpaperPath, setWallpaperPath] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [isElectron, setIsElectron] = useState(false);
+    const [wallpaperBase64, setWallpaperBase64] = useState('');
+    const [refreshKey, setRefreshKey] = useState(0);
+    const lastWallpaperRef = useRef('');
 
-    useEffect(() => {
-        async function fetchWallpaper() {
-            try {
-                setIsLoading(true);
-                const path = await getCurrentWallpaper();
-                setWallpaperPath(path);
-                setError('');
-            } catch (err) {
-                setError('Failed to get current wallpaper');
-            } finally {
-                setIsLoading(false);
+    async function fetchWallpaper(forceLoading = false) {
+        if (forceLoading) {
+            setIsLoading(true);
+        }
+
+        const path = await getCurrentWallpaper().catch(() => {
+            setError('Failed to get current wallpaper');
+            return '';
+        });
+
+        if (path !== lastWallpaperRef.current) {
+            lastWallpaperRef.current = path;
+            setWallpaperPath(path);
+
+            setWallpaperBase64('');
+
+            if (path && typeof window !== 'undefined' && window.wallpaperAPI?.getWallpaperAsBase64) {
+                const response = await window.wallpaperAPI.getWallpaperAsBase64(path)
+                    .catch(err => {
+                        console.error("Failed to get wallpaper as base64:", err);
+                        return null;
+                    });
+
+                if (response?.success && response.dataUrl) {
+                    setWallpaperBase64(response.dataUrl);
+                }
             }
         }
 
-        fetchWallpaper();
+        setIsLoading(false);
+    }
+
+    useEffect(() => {
+        setIsElectron(typeof window !== 'undefined' && !!window.wallpaperAPI);
+
+        fetchWallpaper(true);
+
+        if (typeof window !== 'undefined') {
+            const handleWallpaperChange = () => {
+                setRefreshKey(prevKey => prevKey + 1);
+            };
+
+            window.addEventListener('wallpaper-changed', handleWallpaperChange);
+
+            const intervalId = setInterval(() => {
+                fetchWallpaper(false);
+            }, 30000);
+
+            return () => {
+                window.removeEventListener('wallpaper-changed', handleWallpaperChange);
+                clearInterval(intervalId);
+            };
+        }
     }, []);
 
-    if (isLoading) {
+    useEffect(() => {
+        if (refreshKey > 0) {
+            fetchWallpaper(false);
+        }
+    }, [refreshKey]);
+
+    if (isLoading && !wallpaperPath) {
         return (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex items-center justify-center">
                 <div className="animate-pulse flex space-x-4">
@@ -51,22 +99,20 @@ export default function CurrentWallpaper() {
                     </p>
 
                     <div className="border rounded-lg overflow-hidden">
-                        <img
-                            src={`file://${wallpaperPath}`}
-                            alt="Current wallpaper"
-                            className="w-full h-auto"
-                            onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                                const errorMsg = document.getElementById('img-error');
-                                if (errorMsg) errorMsg.style.display = 'block';
-                            }}
-                        />
-                        <div
-                            id="img-error"
-                            className="hidden p-4 text-sm text-gray-500 text-center dark:text-gray-400"
-                        >
-                            Preview not available in browser. Try the desktop app.
-                        </div>
+                        {wallpaperBase64 ? (
+                            <img
+                                src={wallpaperBase64}
+                                alt="Current wallpaper"
+                                className="w-full h-auto"
+                            />
+                        ) : (
+                            <div className="p-4 text-sm text-gray-500 text-center dark:text-gray-400">
+                                {isLoading ?
+                                    "Loading wallpaper preview..." :
+                                    `Preview not available. ${isElectron ? "Image may be inaccessible." : "Try the desktop app."}`
+                                }
+                            </div>
+                        )}
                     </div>
                 </>
             ) : (

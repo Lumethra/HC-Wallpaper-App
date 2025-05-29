@@ -17,6 +17,7 @@ export default function RotateWallpaper() {
     const [selectedWallpapers, setSelectedWallpapers] = useState<string[]>([]);
     const [wallpaperSettingStatus, setWallpaperSettingStatus] = useState("");
     const timer = useRef<number | null>(null);
+    const lastWallpaperId = useRef<string | null>(null);
 
     useEffect(() => {
         let isActive = true;
@@ -38,17 +39,15 @@ export default function RotateWallpaper() {
             }
         }
 
-        getStuff()
+        getStuff();
 
         const saved = localStorage.getItem('wallpaperRotation');
         if (saved) {
             const settings = JSON.parse(saved);
-            isActive && setIsRotating(!!settings.isRotating);
             isActive && setSwitchingInterval(settings.interval || 30);
-            isActive && setSelectedWallpapers(settings.selectedWallpapers || []);
 
-            if (settings.isRotating) {
-                startWallpaperChange(settings.interval);
+            if (settings.selectedWallpapers && Array.isArray(settings.selectedWallpapers)) {
+                isActive && setSelectedWallpapers(settings.selectedWallpapers);
             }
         }
 
@@ -80,12 +79,30 @@ export default function RotateWallpaper() {
     function changeWallpaper() {
         if (!selectedWallpapers.length || !window.wallpaperAPI) return;
 
-        const idx = Math.floor(Math.random() * selectedWallpapers.length);
-        const selectedId = selectedWallpapers[idx];
+        if (selectedWallpapers.length === 1) {
+            const wallpaper = wallpapers.find(w => w.id === selectedWallpapers[0]);
+            if (wallpaper) setWallpaper(wallpaper);
+            return;
+        }
+
+        let availableIds = [...selectedWallpapers];
+
+        if (lastWallpaperId.current && availableIds.length > 1) {
+            availableIds = availableIds.filter(id => id !== lastWallpaperId.current);
+        }
+
+        const idx = Math.floor(Math.random() * availableIds.length);
+        const selectedId = availableIds[idx];
         const wallpaper = wallpapers.find(w => w.id === selectedId);
 
         if (!wallpaper) return;
 
+        lastWallpaperId.current = wallpaper.id;
+
+        setWallpaper(wallpaper);
+    }
+
+    function setWallpaper(wallpaper: Wallpaper) {
         fetch(getWallpaperImageUrl(wallpaper.path))
             .then(response => {
                 if (!response.ok) throw new Error("The download failed, why you let this happen? Why you blocked it or stopped it? The artists need a promotion, they need ur download");
@@ -102,7 +119,7 @@ export default function RotateWallpaper() {
                         format: wallpaper.format
                     }).then(result => {
                         setWallpaperSettingStatus(result.success
-                            ? `Have fun with ur new wallpaper called: ${wallpaper.name}`
+                            ? `Current wallpaper: ${wallpaper.name}`
                             : `What did you do, but anyways, congrats to breaking the code, the wallpaper failed to set`
                         );
                     });
@@ -137,7 +154,7 @@ export default function RotateWallpaper() {
         }
 
         setIsRotating(false);
-        setWallpaperSettingStatus(':( no rotation for me anymore, I am now jobless, you monster');
+        setWallpaperSettingStatus('No rotation for me anymore, I am now jobless, you monster. :(');
     }
 
     function gimmeAll() {
