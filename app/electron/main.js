@@ -281,7 +281,7 @@ public class Wallpaper {
 }
 
 let lastWallpaperSetTimestamp = 0;
-const WALLPAPER_SET_COOLDOWN = 500; // 500ms cooldown
+const WALLPAPER_SET_COOLDOWN = 500;
 
 ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
     const now = Date.now();
@@ -297,11 +297,6 @@ ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
     if (!fs.existsSync(wallpaperDir)) {
         fs.mkdirSync(wallpaperDir, { recursive: true });
     }
-
-    let currentWallpaper = '';
-    try {
-        currentWallpaper = await getWallpaper();
-    } catch (err) { }
 
     const matches = wallpaper.dataUrl.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
     if (!matches) {
@@ -325,7 +320,9 @@ ipcMain.handle('save-and-set-wallpaper', async (_, wallpaper) => {
 
     try {
         await safeSetWallpaper(filePath);
-        await cleanupWallpapers();
+
+        await cleanupOldWallpapers(filePath);
+
         mainWindow.webContents.send('wallpaper-update');
         return { success: true, filePath };
     } catch (error) {
@@ -361,7 +358,7 @@ ipcMain.handle('set-wallpaper', async (_, imagePath) => {
         try {
             currentWallpaper = await getWallpaper();
         } catch (err) {
-            // Continue
+            console.warn('Could not get current wallpaper:', err);
         }
 
         let localPath = imagePath;
@@ -382,31 +379,17 @@ ipcMain.handle('set-wallpaper', async (_, imagePath) => {
             fs.writeFileSync(localPath, buffer);
         }
 
-        await setWallpaper(localPath);
+        await safeSetWallpaper(localPath);
 
-        mainWindow.webContents.send('wallpaper-update');
-
-        if (currentWallpaper &&
-            currentWallpaper !== localPath) {
-
-            const wallpaperBaseDir = path.join(os.homedir(), '.HC-Wallpaper-App');
-
-            const normalizedCurrent = path.normalize(currentWallpaper);
-            const normalizedBase = path.normalize(wallpaperBaseDir);
-
-            if (normalizedCurrent.startsWith(normalizedBase)) {
-                try {
-                    if (fs.existsSync(currentWallpaper)) {
-                        fs.unlinkSync(currentWallpaper);
-                    }
-                } catch (cleanupErr) {
-                    // Ignore 
-                }
-            }
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('wallpaper-update');
         }
+
+        await cleanupOldWallpapers(localPath);
 
         return { success: true };
     } catch (error) {
+        console.error('Error setting wallpaper:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error'
@@ -437,29 +420,48 @@ ipcMain.handle('save-wallpaper-image', async (_, imageData) => {
 });
 
 ipcMain.handle('get-wallpaper-as-base64', async (_, imagePath) => {
-    if (!fs.existsSync(imagePath)) {
-        return { success: false, error: 'File not found' };
+    try {
+        if (!imagePath || !fs.existsSync(imagePath)) {
+            return { success: false, error: 'File not found' };
+        }
+
+        const stats = fs.statSync(imagePath);
+        const maxSize = 50 * 1024 * 1024;
+
+        if (stats.size > maxSize) {
+            return { success: false, error: 'File too large for preview' };
+        }
+
+        const imageBuffer = fs.readFileSync(imagePath);
+        const extension = path.extname(imagePath).toLowerCase().substring(1);
+        const mimeType = getTypeFromExtension(extension);
+
+        if (!mimeType) {
+            return { success: false, error: 'Unsupported image format' };
+        }
+
+        const dataUrl = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
+        return { success: true, dataUrl };
+    } catch (error) {
+        console.error('Error converting image to base64:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to load image'
+        };
     }
-
-    const imageBuffer = fs.readFileSync(imagePath);
-
-    const extension = path.extname(imagePath).toLowerCase().substring(1);
-    const mimeType = getTypeFromExtension(extension);
-
-    const dataUrl = `data:${mimeType};base64,${imageBuffer.toString('base64')}`;
-    return { success: true, dataUrl };
 });
 
 function getTypeFromExtension(extension) {
     const mimeTypes = {
-        jpg: 'image/jpeg',
-        jpeg: 'image/jpeg',
-        png: 'image/png',
-        gif: 'image/gif',
-        webp: 'image/webp'
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'bmp': 'image/bmp',
+        'webp': 'image/webp',
+        'svg': 'image/svg+xml'
     };
-
-    return mimeTypes[extension] || 'image/jpeg';
+    return mimeTypes[extension.toLowerCase()] || 'image/jpeg';
 }
 
 async function safeSetWallpaper(filePath) {
@@ -545,29 +547,83 @@ async function tryOtherWallpaperMethods(filePath) {
 }
 
 async function cleanupWallpapers() {
-    let currentWallpaper = '';
     try {
-        currentWallpaper = await getWallpaper();
-    } catch (err) { }
-
-    const wallpaperDir = path.join(os.homedir(), '.HC-Wallpaper-App');
-    if (!fs.existsSync(wallpaperDir)) {
-        return;
-    }
-
-    const files = fs.readdirSync(wallpaperDir);
-
-    for (const file of files) {
-        const filePath = path.join(wallpaperDir, file);
-
-        if (filePath === currentWallpaper) {
-            continue;
+        let currentWallpaper = '';
+        try {
+            currentWallpaper = await getWallpaper();
+        } catch (err) {
+            console.error('Could not get current wallpaper for cleanup:', err);
         }
 
-        try {
-            fs.unlinkSync(filePath);
-            console.log(`Removed unused wallpaper: ${filePath}`);
-        } catch (err) { }
+        const wallpaperDir = path.join(os.homedir(), '.HC-Wallpaper-App');
+        if (!fs.existsSync(wallpaperDir)) {
+            return;
+        }
+
+        const files = fs.readdirSync(wallpaperDir);
+        const cutoffTime = Date.now() - (7 * 24 * 60 * 60 * 1000);
+
+        console.log('🧹 Periodic cleanup: removing files older than 7 days');
+
+        for (const file of files) {
+            const filePath = path.join(wallpaperDir, file);
+
+            if (currentWallpaper && path.normalize(filePath) === path.normalize(currentWallpaper)) {
+                continue;
+            }
+
+            try {
+                const stats = fs.statSync(filePath);
+
+                if (stats.isFile() && stats.mtime.getTime() < cutoffTime) {
+                    fs.unlinkSync(filePath);
+                    console.log(`🗑️ Cleaned up very old file: ${file}`);
+                }
+            } catch (err) {
+                console.error(`❌ Error cleaning up file ${file}:`, err);
+            }
+        }
+    } catch (err) {
+        console.error('❌ Error during periodic cleanup:', err);
+    }
+}
+
+async function cleanupOldWallpapers(currentWallpaperPath) {
+    try {
+        const wallpaperDir = path.join(os.homedir(), '.HC-Wallpaper-App');
+        if (!fs.existsSync(wallpaperDir)) {
+            return;
+        }
+
+        const files = fs.readdirSync(wallpaperDir);
+        const normalizedCurrent = path.normalize(currentWallpaperPath);
+
+        console.log(`🧹 Cleaning up old wallpapers, keeping: ${path.basename(currentWallpaperPath)}`);
+
+        for (const file of files) {
+            const filePath = path.join(wallpaperDir, file);
+            const normalizedFile = path.normalize(filePath);
+
+            if (normalizedFile === normalizedCurrent) {
+                continue;
+            }
+
+            try {
+                const stats = fs.statSync(filePath);
+
+                const ext = path.extname(file).toLowerCase();
+                const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+
+                if (stats.isFile() && imageExtensions.includes(ext)) {
+                    fs.unlinkSync(filePath);
+                    console.log(`🗑️ Deleted old wallpaper: ${file}`);
+                }
+            } catch (err) {
+                console.error(`❌ Error deleting file ${file}:`, err);
+            }
+        }
+    } catch (err) {
+        console.error('❌ Error during old wallpaper cleanup:', err);
     }
 }
 
