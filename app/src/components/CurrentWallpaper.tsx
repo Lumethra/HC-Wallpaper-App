@@ -16,29 +16,36 @@ export default function CurrentWallpaper() {
         if (forceLoading) {
             setIsLoading(true);
         }
+        setError('');
 
-        const path = await getCurrentWallpaper().catch(() => {
-            setError('Failed to get current wallpaper');
-            return '';
-        });
+        try {
+            const path = await getCurrentWallpaper();
 
-        if (path !== lastWallpaperRef.current) {
-            lastWallpaperRef.current = path;
-            setWallpaperPath(path);
+            if (path && path !== lastWallpaperRef.current) {
+                lastWallpaperRef.current = path;
+                setWallpaperPath(path);
+                setWallpaperBase64('');
 
-            setWallpaperBase64('');
-
-            if (path && typeof window !== 'undefined' && window.wallpaperAPI?.getWallpaperAsBase64) {
-                const response = await window.wallpaperAPI.getWallpaperAsBase64(path)
-                    .catch(err => {
+                if (typeof window !== 'undefined' && window.wallpaperAPI?.getWallpaperAsBase64) {
+                    try {
+                        const response = await window.wallpaperAPI.getWallpaperAsBase64(path);
+                        if (response?.success && response.dataUrl) {
+                            setWallpaperBase64(response.dataUrl);
+                        } else {
+                            console.warn('Failed to get wallpaper as base64:', response?.error);
+                        }
+                    } catch (err) {
                         console.error("Failed to get wallpaper as base64:", err);
-                        return null;
-                    });
-
-                if (response?.success && response.dataUrl) {
-                    setWallpaperBase64(response.dataUrl);
+                    }
                 }
+            } else if (!path) {
+                setWallpaperPath('');
+                setWallpaperBase64('');
+                lastWallpaperRef.current = '';
             }
+        } catch (err) {
+            console.error("Error fetching wallpaper:", err);
+            setError('Failed to get current wallpaper');
         }
 
         setIsLoading(false);
@@ -98,19 +105,30 @@ export default function CurrentWallpaper() {
                         {wallpaperPath}
                     </p>
 
-                    <div className="border rounded-lg overflow-hidden">
+                    <div className="border rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900">
                         {wallpaperBase64 ? (
                             <img
                                 src={wallpaperBase64}
                                 alt="Current wallpaper"
-                                className="w-full h-auto"
+                                className="w-full h-auto max-h-96 object-contain"
+                                onError={() => {
+                                    console.error("Failed to load wallpaper image");
+                                    setWallpaperBase64('');
+                                }}
+                                onLoad={() => {
+                                    console.log("Wallpaper image loaded successfully");
+                                }}
                             />
                         ) : (
-                            <div className="p-4 text-sm text-gray-500 text-center dark:text-gray-400">
-                                {isLoading ?
-                                    "Loading wallpaper preview..." :
+                            <div className="p-8 text-sm text-gray-500 text-center dark:text-gray-400">
+                                {isLoading ? (
+                                    <div className="flex items-center justify-center">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mr-2"></div>
+                                        Loading wallpaper preview...
+                                    </div>
+                                ) : (
                                     `Preview not available. ${isElectron ? "Image may be inaccessible." : "Try the desktop app."}`
-                                }
+                                )}
                             </div>
                         )}
                     </div>

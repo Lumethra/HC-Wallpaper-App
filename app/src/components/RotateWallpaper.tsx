@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { getWallpaperApiUrl, getWallpaperImageUrl } from '@/utils/api-config';
+import { ROOMBA_CAT_GIF } from '@/assets/roomba-cat-gif';
 
 type Wallpaper = {
     id: string;
@@ -67,7 +68,6 @@ export default function RotateWallpaper() {
         }));
     }, [isRotating, switchingInterval, selectedWallpapers]);
 
-    // isn'T a type always a string, VS Code? anyways, be quiet and don't complain
     function toggleSelection(id: string) {
         setSelectedWallpapers(current => {
             return current.includes(id)
@@ -114,7 +114,6 @@ export default function RotateWallpaper() {
                 reader.onloadend = () => {
                     window.wallpaperAPI.saveAndSetWallpaper({
                         name: wallpaper.name,
-                        // why do we always need to make this a string? isn't it a string, I hate the problems check in VS Code, it is working, so why yapping. 
                         dataUrl: typeof reader.result === 'string' ? reader.result : '',
                         format: wallpaper.format
                     }).then(result => {
@@ -176,7 +175,12 @@ export default function RotateWallpaper() {
 
             <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">
-                    Rotates every {switchingInterval} minutes <img src="/custom-emoji/roomba-cat.gif" alt="blobhaj_party" className="inline w-5 h-5 ml-1 align-text-bottom" />
+                    <span>Rotates every {switchingInterval} minutes </span>
+                    <img
+                        src={ROOMBA_CAT_GIF}
+                        alt="roomba cat"
+                        className="inline w-5 h-5 ml-1 align-text-bottom"
+                    />
                 </label>
                 <input
                     type="range"
@@ -225,6 +229,18 @@ export default function RotateWallpaper() {
                                 src={getWallpaperImageUrl(wallpaper.path)}
                                 alt={wallpaper.name}
                                 className="w-full aspect-video object-cover"
+                                loading="lazy"
+                                onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const parent = target.parentElement;
+                                    if (parent && !parent.querySelector('.error-placeholder')) {
+                                        const errorDiv = document.createElement('div');
+                                        errorDiv.className = 'error-placeholder flex items-center justify-center h-full text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700';
+                                        errorDiv.textContent = 'Failed to load';
+                                        parent.appendChild(errorDiv);
+                                    }
+                                }}
                             />
                             {selectedWallpapers.includes(wallpaper.id) && (
                                 <div className="absolute top-1 right-1 bg-blue-500 rounded-full w-4 h-4 flex items-center justify-center">
@@ -266,7 +282,7 @@ export default function RotateWallpaper() {
             </div>
 
             {wallpaperSettingStatus && (
-                <div className="mt-4 p-2 rounded text-sm text-center bg-blue-100 text-blue-700 border border-blue-200">
+                <div className="mt-4 p-2 rounded text-sm text-center bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-900">
                     {wallpaperSettingStatus}
                 </div>
             )}
