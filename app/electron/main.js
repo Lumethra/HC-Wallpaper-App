@@ -75,65 +75,11 @@ function createWindow() {
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
-                preload: path.join(__dirname, 'preload.js'),
-                webSecurity: false
+                preload: path.join(__dirname, 'preload.js')
             },
             icon: path.join(__dirname, '../public/icons/formatted-icons/icon-256x256.png'),
             show: false
         });
-
-        if (app.isPackaged) {
-            const possiblePaths = [
-                path.join(__dirname, 'index.html'),
-                path.join(__dirname, '../index.html'),
-                path.join(__dirname, '../out/index.html'),
-                path.join(process.resourcesPath, 'app', 'out', 'index.html'),
-                path.join(app.getAppPath(), 'out', 'index.html'),
-            ];
-
-            let indexPath = null;
-            for (const htmlPath of possiblePaths) {
-                if (fs.existsSync(htmlPath)) {
-                    indexPath = htmlPath;
-                    console.log(`📍 Found index.html at: ${htmlPath}`);
-                    break;
-                }
-            }
-
-            if (!indexPath) {
-                console.error('❌ Could not find index.html in packaged app');
-                const fallbackPath = path.join(__dirname, 'fallback.html');
-                if (fs.existsSync(fallbackPath)) {
-                    mainWindow.loadFile(fallbackPath);
-                }
-                return;
-            }
-
-            mainWindow.loadFile(indexPath);
-
-            mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
-                const parsedUrl = new URL(navigationUrl);
-
-                if (parsedUrl.protocol === 'file:') {
-                    event.preventDefault();
-                    console.log(`🔄 Navigation intercepted: ${parsedUrl.pathname}`);
-                    mainWindow.loadFile(indexPath);
-                }
-            });
-
-            mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-                const parsedUrl = new URL(url);
-                if (parsedUrl.protocol === 'file:') {
-                    console.log(`🔄 Window open intercepted: ${parsedUrl.pathname}`);
-                    // Always load the main index.html for client-side routing
-                    mainWindow.loadFile(indexPath);
-                    return { action: 'deny' };
-                }
-                return { action: 'allow' };
-            });
-        } else {
-            mainWindow.loadURL('http://localhost:3000');
-        }
 
         mainWindow.once('ready-to-show', () => {
             mainWindow.show();
@@ -148,6 +94,51 @@ function createWindow() {
             }
         });
 
+        let startUrl;
+        if (isDev) {
+            startUrl = 'http://localhost:3000';
+        } else {
+            const potentialPaths = [
+                path.join(__dirname, '../out/index.html'),
+                path.join(__dirname, '../../out/index.html'),
+                path.join(app.getAppPath(), 'out/index.html'),
+                path.join(process.resourcesPath, 'app.asar/out/index.html')
+            ];
+
+            startUrl = null;
+            for (const htmlPath of potentialPaths) {
+                if (fs.existsSync(htmlPath)) {
+                    startUrl = `file://${htmlPath}`;
+                    break;
+                }
+            }
+
+            if (!startUrl) {
+                const fallbackPath = path.join(__dirname, 'fallback.html');
+                if (fs.existsSync(fallbackPath)) {
+                    startUrl = `file://${fallbackPath}`;
+                } else {
+                    const tempFallback = path.join(app.getPath('temp'), 'fallback.html');
+                    fs.writeFileSync(tempFallback, `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            <title>Error</title>
+                        </head>
+                        <body>
+                            <h1>Failed to load application</h1>
+                            <p>The application could not find the required HTML files.</p>
+                        </body>
+                        </html>
+                    `);
+                    startUrl = `file://${tempFallback}`;
+                }
+            }
+        }
+
+        mainWindow.loadURL(startUrl);
+
         if (isDev) {
             mainWindow.webContents.openDevTools({ mode: 'detach' });
         }
@@ -156,7 +147,6 @@ function createWindow() {
             mainWindow = null;
         });
     } catch (err) {
-        console.error('Error creating window:', err);
         app.quit();
     }
 }
@@ -194,26 +184,15 @@ function fixHtmlPaths() {
             const indexPath = path.join(outDir, 'index.html');
             if (fs.existsSync(indexPath)) {
                 let html = fs.readFileSync(indexPath, 'utf8');
-
-                html = html.replace(/href="\//g, 'href="./');
-                html = html.replace(/src="\//g, 'src="./');
-                html = html.replace(/href="\/_next\//g, 'href="./_next/');
-                html = html.replace(/src="\/_next\//g, 'src="./_next/');
-                html = html.replace(/url\("\//g, 'url("./');
-
+                html = html.replace(/href="\//g, 'href="');
+                html = html.replace(/src="\//g, 'src="');
                 if (html.indexOf('<base') === -1) {
                     html = html.replace('<head>', '<head>\n<base href="./">');
                 }
-
                 fs.writeFileSync(indexPath, html);
-                console.log('✓ Fixed HTML paths for main index');
-
-                console.log('✓ Using Next.js App Router for client-side navigation');
             }
         }
-    } catch (err) {
-        console.error('Error fixing HTML paths:', err);
-    }
+    } catch (err) { }
 }
 
 function extractWallpaperBinary() {
