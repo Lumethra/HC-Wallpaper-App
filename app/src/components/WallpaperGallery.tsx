@@ -19,10 +19,15 @@ export default function WallpaperGallery() {
     const [error, setError] = useState<string | null>(null);
     const [deviceType, setDeviceType] = useState('desktop');
     const [visibleCount, setVisibleCount] = useState(30);
+    const [isElectron, setIsElectron] = useState(false);
 
     useEffect(() => {
         const isMobile = /iPhone|iPad|Android/.test(navigator.userAgent);
         setDeviceType(isMobile ? 'mobile' : 'desktop');
+    }, []);
+
+    useEffect(() => {
+        setIsElectron(typeof window !== 'undefined' && !!window.wallpaperAPI);
     }, []);
 
     // why is this needed to keep vs code quiet, it is working ;(
@@ -298,12 +303,22 @@ export default function WallpaperGallery() {
                                 <span className="text-indigo-600 dark:text-indigo-300"> • </span>
                                 <span className="text-pink-600 dark:text-pink-300">{wallpaper.format}</span>
                             </p>
-                            <button
-                                className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"
-                                onClick={() => handleSetWallpaper(wallpaper)}
-                            >
-                                Set as Wallpaper
-                            </button>
+                            {!isElectron ? (
+                                <a
+                                    href={getWallpaperImageUrl(wallpaper.path)}
+                                    download={`${wallpaper.displayName || wallpaper.name}.${wallpaper.format}`}
+                                    className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full block text-center"
+                                >
+                                    Download
+                                </a>
+                            ) : (
+                                <button
+                                    className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"
+                                    onClick={() => handleSetWallpaper(wallpaper)}
+                                >
+                                    Set as Wallpaper
+                                </button>
+                            )}
                         </div>
                     </div>
                 ))}
