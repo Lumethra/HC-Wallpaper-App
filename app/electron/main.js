@@ -83,7 +83,32 @@ function createWindow() {
         });
 
         if (app.isPackaged) {
-            const indexPath = path.join(__dirname, '../out/index.html');
+            const possiblePaths = [
+                path.join(__dirname, 'index.html'),
+                path.join(__dirname, '../index.html'),
+                path.join(__dirname, '../out/index.html'),
+                path.join(process.resourcesPath, 'app', 'out', 'index.html'),
+                path.join(app.getAppPath(), 'out', 'index.html'),
+            ];
+
+            let indexPath = null;
+            for (const htmlPath of possiblePaths) {
+                if (fs.existsSync(htmlPath)) {
+                    indexPath = htmlPath;
+                    console.log(`📍 Found index.html at: ${htmlPath}`);
+                    break;
+                }
+            }
+
+            if (!indexPath) {
+                console.error('❌ Could not find index.html in packaged app');
+                const fallbackPath = path.join(__dirname, 'fallback.html');
+                if (fs.existsSync(fallbackPath)) {
+                    mainWindow.loadFile(fallbackPath);
+                }
+                return;
+            }
+
             mainWindow.loadFile(indexPath);
 
             mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
@@ -91,36 +116,21 @@ function createWindow() {
 
                 if (parsedUrl.protocol === 'file:') {
                     event.preventDefault();
-                    handleFileNavigation(parsedUrl.pathname);
+                    console.log(`🔄 Navigation intercepted: ${parsedUrl.pathname}`);
+                    mainWindow.loadFile(indexPath);
                 }
             });
 
             mainWindow.webContents.setWindowOpenHandler(({ url }) => {
                 const parsedUrl = new URL(url);
                 if (parsedUrl.protocol === 'file:') {
-                    handleFileNavigation(parsedUrl.pathname);
+                    console.log(`🔄 Window open intercepted: ${parsedUrl.pathname}`);
+                    // Always load the main index.html for client-side routing
+                    mainWindow.loadFile(indexPath);
                     return { action: 'deny' };
                 }
                 return { action: 'allow' };
             });
-
-            function handleFileNavigation(pathname) {
-                const route = pathname.split('/').filter(Boolean).pop() || '';
-
-                if (['gallery', 'current', 'rotate'].includes(route)) {
-                    const routePath = path.join(__dirname, '../out', route, 'index.html');
-                    if (fs.existsSync(routePath)) {
-                        console.log(`📂 Loading route: ${route}`);
-                        mainWindow.loadFile(routePath);
-                    } else {
-                        console.log(`⚠️ Route file not found, loading main index: ${route}`);
-                        mainWindow.loadFile(indexPath);
-                    }
-                } else {
-                    console.log(`🏠 Loading main index for unknown route: ${route}`);
-                    mainWindow.loadFile(indexPath);
-                }
-            }
         } else {
             mainWindow.loadURL('http://localhost:3000');
         }
@@ -146,6 +156,7 @@ function createWindow() {
             mainWindow = null;
         });
     } catch (err) {
+        console.error('Error creating window:', err);
         app.quit();
     }
 }
@@ -186,10 +197,8 @@ function fixHtmlPaths() {
 
                 html = html.replace(/href="\//g, 'href="./');
                 html = html.replace(/src="\//g, 'src="./');
-
                 html = html.replace(/href="\/_next\//g, 'href="./_next/');
                 html = html.replace(/src="\/_next\//g, 'src="./_next/');
-
                 html = html.replace(/url\("\//g, 'url("./');
 
                 if (html.indexOf('<base') === -1) {
@@ -197,22 +206,9 @@ function fixHtmlPaths() {
                 }
 
                 fs.writeFileSync(indexPath, html);
+                console.log('✓ Fixed HTML paths for main index');
 
-                const routes = ['gallery', 'current', 'rotate'];
-
-                routes.forEach(route => {
-                    const routeDir = path.join(outDir, route);
-                    if (!fs.existsSync(routeDir)) {
-                        fs.mkdirSync(routeDir, { recursive: true });
-                    }
-
-                    // Copy the fixed index.html to each route directory
-                    const routeIndexPath = path.join(routeDir, 'index.html');
-                    fs.writeFileSync(routeIndexPath, html);
-                    console.log(`✓ Created route file: ${route}/index.html`);
-                });
-
-                console.log('✓ Fixed HTML paths and created route structure');
+                console.log('✓ Using Next.js App Router for client-side navigation');
             }
         }
     } catch (err) {
