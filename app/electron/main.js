@@ -187,6 +187,11 @@ function fixHtmlPaths() {
                 html = html.replace(/href="\//g, 'href="./');
                 html = html.replace(/src="\//g, 'src="./');
 
+                html = html.replace(/href="\/_next\//g, 'href="./_next/');
+                html = html.replace(/src="\/_next\//g, 'src="./_next/');
+
+                html = html.replace(/url\("\//g, 'url("./');
+
                 if (html.indexOf('<base') === -1) {
                     html = html.replace('<head>', '<head>\n<base href="./">');
                 }
@@ -204,6 +209,7 @@ function fixHtmlPaths() {
                     // Copy the fixed index.html to each route directory
                     const routeIndexPath = path.join(routeDir, 'index.html');
                     fs.writeFileSync(routeIndexPath, html);
+                    console.log(`✓ Created route file: ${route}/index.html`);
                 });
 
                 console.log('✓ Fixed HTML paths and created route structure');
