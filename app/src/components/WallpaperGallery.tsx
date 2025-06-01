@@ -18,6 +18,7 @@ export default function WallpaperGallery() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [deviceType, setDeviceType] = useState('desktop');
+    const [visibleCount, setVisibleCount] = useState(30);
 
     useEffect(() => {
         const isMobile = /iPhone|iPad|Android/.test(navigator.userAgent);
@@ -35,17 +36,17 @@ export default function WallpaperGallery() {
     // VS code, you just added DeviceTypeSwitcherProps, I don't think, that is necessary, but fine, here it is
     function DeviceTypeSwitcher({ deviceType, setDeviceType }: DeviceTypeSwitcherProps) {
         return (
-            <div className="mt-6 p-4 border-t">
-                <p className="mb-2 text-sm">Switch wallpaper type:</p>
+            <div className="mt-6 p-4 border-t border-gray-200 dark:border-gray-700">
+                <p className="mb-2 text-sm text-gray-600 dark:text-gray-300">Switch wallpaper type:</p>
                 <div className="flex space-x-2">
                     <button
-                        className={`px-3 py-1 rounded ${deviceType === 'desktop' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
+                        className={`px-3 py-1 rounded ${deviceType === 'desktop' ? 'bg-green-500 text-gray-100' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
                         onClick={() => setDeviceType('desktop')}
                     >
                         Desktop
                     </button>
                     <button
-                        className={`px-3 py-1 rounded ${deviceType === 'mobile' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}
+                        className={`px-3 py-1 rounded ${deviceType === 'mobile' ? 'bg-green-500 text-gray-100' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}
                         onClick={() => setDeviceType('mobile')}
                     >
                         Mobile
@@ -181,27 +182,37 @@ export default function WallpaperGallery() {
         };
     }, [deviceType]);
 
-    if (loading) return <div className="p-8 text-center">Loading the wallpapers...</div>;
-    if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
-    if (!wallpapers.length) return <div className="p-8 text-center">No wallpapers there, congrats, you broke the code.</div>;
+    const loadMoreWallpapers = () => {
+        setVisibleCount(prev => Math.min(prev + 30, wallpapers.length));
+    };
 
-    // mobile shit 
+    if (loading) return <div className="p-8 text-center text-gray-600 dark:text-gray-300">Loading the wallpapers...</div>;
+    if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+    if (!wallpapers.length) return <div className="p-8 text-center text-gray-600 dark:text-gray-300">No wallpapers there, congrats, you broke the code.</div>;
+
     if (deviceType === 'mobile') {
+        const visibleWallpapers = wallpapers.slice(0, visibleCount);
+
         return (
             <div>
-                <div className="mb-4 text-sm text-gray-600">Mobile Wallpapers</div>
                 <div className="flex flex-wrap px-2">
-                    {wallpapers.map(wallpaper => (
+                    {visibleWallpapers.map(wallpaper => (
                         <div
                             key={wallpaper.id}
                             className="w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 p-1.5 relative"
                         >
-                            <div className="border rounded-lg overflow-hidden shadow-md h-full relative">
+                            <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-md h-full relative bg-white dark:bg-gray-800 transition-all duration-200 hover:shadow-[0_0_0_2px_#10b981] hover:scale-105">
                                 <div className="w-full aspect-[9/16] overflow-hidden">
                                     <img
                                         src={getWallpaperImageUrl(wallpaper.path)}
                                         alt={wallpaper.displayName || wallpaper.name}
                                         className="w-full h-full object-cover"
+                                        loading="lazy"
+                                        decoding="async"
+                                        style={{
+                                            contentVisibility: 'auto',
+                                            containIntrinsicSize: '200px 356px'
+                                        }}
                                     />
                                 </div>
 
@@ -234,44 +245,58 @@ export default function WallpaperGallery() {
                             </div>
                         </div>
                     ))}
+
+                    {visibleCount < wallpapers.length && (
+                        <div className="w-full flex justify-center p-4">
+                            <button
+                                onClick={loadMoreWallpapers}
+                                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                            >
+                                Load More ({wallpapers.length - visibleCount} remaining)
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                { }
                 <DeviceTypeSwitcher deviceType={deviceType} setDeviceType={setDeviceType} />
             </div>
         );
     }
 
-    // desktop shit 
+    const visibleWallpapers = wallpapers.slice(0, visibleCount);
+
     return (
         <div>
-            <div className="mb-4 text-sm text-gray-600">
-                Showing wallpapers for {deviceType} devices
-            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                {wallpapers.map(wallpaper => (
-                    <div key={wallpaper.id} className="border rounded-lg overflow-hidden shadow-md">
+                {visibleWallpapers.map(wallpaper => (
+                    <div key={wallpaper.id} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-md bg-gray-300 dark:bg-gray-800 transition-all duration-200 hover:shadow-[0_0_0_2px_#10b981] hover:scale-105 relative">
                         <div className="relative h-48">
                             <img
                                 src={getWallpaperImageUrl(wallpaper.path)}
                                 alt={wallpaper.displayName || wallpaper.name}
                                 className="w-full h-full object-cover"
+                                loading="lazy"
+                                decoding="async"
+                                style={{
+                                    contentVisibility: 'auto',
+                                    containIntrinsicSize: '300px 192px'
+                                }}
                             />
                         </div>
-                        <div className="p-4 bg-gray-800">
-                            <h3 className="font-medium mb-1 text-purple-300">
+                        <div className="p-4">
+                            <h3 className="font-medium mb-1 text-purple-600 dark:text-purple-300">
                                 {wallpaper.displayName || wallpaper.name}
                             </h3>
                             <p className="text-sm">
                                 {wallpaper.artist && (
-                                    <span className="font-medium text-teal-300">{wallpaper.artist}</span>
+                                    <span className="font-medium text-teal-700 dark:text-teal-300">{wallpaper.artist}</span>
                                 )}
                                 {wallpaper.artist && (
-                                    <span className="text-indigo-300"> • </span>
+                                    <span className="text-indigo-600 dark:text-indigo-300"> • </span>
                                 )}
-                                <span className="text-amber-300">{(wallpaper.size / 1048576).toFixed(2)} MB</span>
-                                <span className="text-indigo-300"> • </span>
-                                <span className="text-pink-300">{wallpaper.format}</span>
+                                <span className="text-amber-800 dark:text-amber-300">{(wallpaper.size / 1048576).toFixed(2)} MB</span>
+                                <span className="text-indigo-600 dark:text-indigo-300"> • </span>
+                                <span className="text-pink-600 dark:text-pink-300">{wallpaper.format}</span>
                             </p>
                             <button
                                 className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 w-full"
@@ -284,7 +309,17 @@ export default function WallpaperGallery() {
                 ))}
             </div>
 
-            { }
+            {visibleCount < wallpapers.length && (
+                <div className="flex justify-center p-4">
+                    <button
+                        onClick={loadMoreWallpapers}
+                        className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                    >
+                        Load More Wallpapers ({wallpapers.length - visibleCount} remaining)
+                    </button>
+                </div>
+            )}
+
             <DeviceTypeSwitcher deviceType={deviceType} setDeviceType={setDeviceType} />
         </div>
     );

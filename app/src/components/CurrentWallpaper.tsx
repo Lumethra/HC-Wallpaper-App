@@ -82,7 +82,7 @@ export default function CurrentWallpaper() {
 
     if (isLoading && !wallpaperPath) {
         return (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex items-center justify-center">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex items-center justify-center border border-gray-200 dark:border-gray-700">
                 <div className="animate-pulse flex space-x-4">
                     <div className="flex-1 space-y-6 py-1">
                         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
@@ -96,16 +96,19 @@ export default function CurrentWallpaper() {
     }
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold mb-4">Current Wallpaper</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-[0_0_0_2px_#10b981] hover:scale-105">
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+                <span className="text-green-500">🖥️</span>
+                Current Wallpaper
+            </h2>
 
             {wallpaperPath ? (
                 <>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 break-all">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 break-all">
                         {wallpaperPath}
                     </p>
 
-                    <div className="border rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900">
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 transition-all duration-200 hover:shadow-[0_0_0_2px_#10b981]">
                         {wallpaperBase64 ? (
                             <img
                                 src={wallpaperBase64}
@@ -123,7 +126,7 @@ export default function CurrentWallpaper() {
                             <div className="p-8 text-sm text-gray-500 text-center dark:text-gray-400">
                                 {isLoading ? (
                                     <div className="flex items-center justify-center">
-                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mr-2"></div>
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500 mr-2"></div>
                                         Loading wallpaper preview...
                                     </div>
                                 ) : (

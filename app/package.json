@@ -29,6 +29,7 @@
     "next": "^15.3.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-icons": "^5.5.0",
     "wallpaper": "^6.1.0"
   },
   "devDependencies": {
