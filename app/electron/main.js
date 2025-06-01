@@ -75,11 +75,55 @@ function createWindow() {
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
-                preload: path.join(__dirname, 'preload.js')
+                preload: path.join(__dirname, 'preload.js'),
+                webSecurity: false
             },
             icon: path.join(__dirname, '../public/icons/formatted-icons/icon-256x256.png'),
             show: false
         });
+
+        if (app.isPackaged) {
+            const indexPath = path.join(__dirname, '../out/index.html');
+            mainWindow.loadFile(indexPath);
+
+            mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+                const parsedUrl = new URL(navigationUrl);
+
+                if (parsedUrl.protocol === 'file:') {
+                    event.preventDefault();
+                    handleFileNavigation(parsedUrl.pathname);
+                }
+            });
+
+            mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+                const parsedUrl = new URL(url);
+                if (parsedUrl.protocol === 'file:') {
+                    handleFileNavigation(parsedUrl.pathname);
+                    return { action: 'deny' };
+                }
+                return { action: 'allow' };
+            });
+
+            function handleFileNavigation(pathname) {
+                const route = pathname.split('/').filter(Boolean).pop() || '';
+
+                if (['gallery', 'current', 'rotate'].includes(route)) {
+                    const routePath = path.join(__dirname, '../out', route, 'index.html');
+                    if (fs.existsSync(routePath)) {
+                        console.log(`📂 Loading route: ${route}`);
+                        mainWindow.loadFile(routePath);
+                    } else {
+                        console.log(`⚠️ Route file not found, loading main index: ${route}`);
+                        mainWindow.loadFile(indexPath);
+                    }
+                } else {
+                    console.log(`🏠 Loading main index for unknown route: ${route}`);
+                    mainWindow.loadFile(indexPath);
+                }
+            }
+        } else {
+            mainWindow.loadURL('http://localhost:3000');
+        }
 
         mainWindow.once('ready-to-show', () => {
             mainWindow.show();
@@ -93,51 +137,6 @@ function createWindow() {
                 }
             }
         });
-
-        let startUrl;
-        if (isDev) {
-            startUrl = 'http://localhost:3000';
-        } else {
-            const potentialPaths = [
-                path.join(__dirname, '../out/index.html'),
-                path.join(__dirname, '../../out/index.html'),
-                path.join(app.getAppPath(), 'out/index.html'),
-                path.join(process.resourcesPath, 'app.asar/out/index.html')
-            ];
-
-            startUrl = null;
-            for (const htmlPath of potentialPaths) {
-                if (fs.existsSync(htmlPath)) {
-                    startUrl = `file://${htmlPath}`;
-                    break;
-                }
-            }
-
-            if (!startUrl) {
-                const fallbackPath = path.join(__dirname, 'fallback.html');
-                if (fs.existsSync(fallbackPath)) {
-                    startUrl = `file://${fallbackPath}`;
-                } else {
-                    const tempFallback = path.join(app.getPath('temp'), 'fallback.html');
-                    fs.writeFileSync(tempFallback, `
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <meta charset="UTF-8">
-                            <title>Error</title>
-                        </head>
-                        <body>
-                            <h1>Failed to load application</h1>
-                            <p>The application could not find the required HTML files.</p>
-                        </body>
-                        </html>
-                    `);
-                    startUrl = `file://${tempFallback}`;
-                }
-            }
-        }
-
-        mainWindow.loadURL(startUrl);
 
         if (isDev) {
             mainWindow.webContents.openDevTools({ mode: 'detach' });
@@ -184,15 +183,35 @@ function fixHtmlPaths() {
             const indexPath = path.join(outDir, 'index.html');
             if (fs.existsSync(indexPath)) {
                 let html = fs.readFileSync(indexPath, 'utf8');
-                html = html.replace(/href="\//g, 'href="');
-                html = html.replace(/src="\//g, 'src="');
+
+                html = html.replace(/href="\//g, 'href="./');
+                html = html.replace(/src="\//g, 'src="./');
+
                 if (html.indexOf('<base') === -1) {
                     html = html.replace('<head>', '<head>\n<base href="./">');
                 }
+
                 fs.writeFileSync(indexPath, html);
+
+                const routes = ['gallery', 'current', 'rotate'];
+
+                routes.forEach(route => {
+                    const routeDir = path.join(outDir, route);
+                    if (!fs.existsSync(routeDir)) {
+                        fs.mkdirSync(routeDir, { recursive: true });
+                    }
+
+                    // Copy the fixed index.html to each route directory
+                    const routeIndexPath = path.join(routeDir, 'index.html');
+                    fs.writeFileSync(routeIndexPath, html);
+                });
+
+                console.log('✓ Fixed HTML paths and created route structure');
             }
         }
-    } catch (err) { }
+    } catch (err) {
+        console.error('Error fixing HTML paths:', err);
+    }
 }
 
 function extractWallpaperBinary() {
