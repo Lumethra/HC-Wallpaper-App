@@ -16,4 +16,89 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  padding: 15px 15px 0 15px;
+  margin: 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+  height: calc(100vh - 15px);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #10b981 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent !important;
+  border: none !important;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #10b981;
+  border-radius: 4px;
+  border: none !important;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #059669;
+}
+
+*::-webkit-scrollbar-button {
+  display: none !important;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+.dark * {
+  scrollbar-color: #10b981 transparent;
+}
+
+.dark *::-webkit-scrollbar-track {
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #10b981 transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #10b981;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #059669;
+}
+
+.custom-scrollbar::-webkit-scrollbar-button {
+  display: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: #10b981 transparent;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
 }

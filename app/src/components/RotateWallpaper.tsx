@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { getWallpaperApiUrl, getWallpaperImageUrl } from '@/utils/api-config';
 import { ROOMBA_CAT_GIF } from '@/assets/roomba-cat-gif';
 
@@ -17,8 +17,11 @@ export default function RotateWallpaper() {
     const [wallpapers, setWallpapers] = useState<Wallpaper[]>([]);
     const [selectedWallpapers, setSelectedWallpapers] = useState<string[]>([]);
     const [wallpaperSettingStatus, setWallpaperSettingStatus] = useState("");
+    const [visibleCount, setVisibleCount] = useState(20);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const timer = useRef<number | null>(null);
     const lastWallpaperId = useRef<string | null>(null);
+    const observerRef = useRef<IntersectionObserver | null>(null);
 
     useEffect(() => {
         let isActive = true;
@@ -67,6 +70,35 @@ export default function RotateWallpaper() {
             selectedWallpapers
         }));
     }, [isRotating, switchingInterval, selectedWallpapers]);
+
+    const loadMoreWallpapers = useCallback(() => {
+        if (visibleCount < wallpapers.length && !isLoadingMore) {
+            setIsLoadingMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => Math.min(prev + 20, wallpapers.length));
+                setIsLoadingMore(false);
+            }, 100);
+        }
+    }, [visibleCount, wallpapers.length, isLoadingMore]);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !isLoadingMore) {
+                    loadMoreWallpapers();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        observerRef.current = observer;
+
+        return () => {
+            if (observerRef.current) {
+                observerRef.current.disconnect();
+            }
+        };
+    }, [loadMoreWallpapers, isLoadingMore]);
 
     function toggleSelection(id: string) {
         setSelectedWallpapers(current => {
@@ -169,12 +201,12 @@ export default function RotateWallpaper() {
         setSelectedWallpapers([]);
     }
 
-    return (
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 shadow-md">
-            <h3 className="text-xl font-semibold mb-4">Wallpaper Rotation</h3>
+    const visibleWallpapers = wallpapers.slice(0, visibleCount);
 
+    return (
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md border border-gray-200 dark:border-gray-700">
             <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">
+                <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                     <span>Rotates every {switchingInterval} minutes </span>
                     <img
                         src={ROOMBA_CAT_GIF}
@@ -189,9 +221,9 @@ export default function RotateWallpaper() {
                     value={switchingInterval}
                     onChange={(sliderThing) => setSwitchingInterval(Number(sliderThing.target.value))}
                     disabled={isRotating}
-                    className="w-full"
+                    className="w-full accent-green-500 bg-gray-200 dark:bg-gray-700 rounded-lg"
                 />
-                <div className="flex justify-between text-xs mt-1">
+                <div className="flex justify-between text-xs mt-1 text-gray-500 dark:text-gray-400">
                     <span>1m</span>
                     <span>60m</span>
                     <span>120m</span>
@@ -200,13 +232,13 @@ export default function RotateWallpaper() {
 
             <div className="mb-4">
                 <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Select wallpapers ({selectedWallpapers.length})
                     </label>
                     <div className="flex space-x-2">
                         <button
                             onClick={gimmeAll}
-                            className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded-md hover:bg-blue-200 dark:hover:bg-blue-700"
+                            className="text-xs px-2 py-1 bg-green-500 text-white rounded-md hover:bg-green-600"
                         >
                             Select All
                         </button>
@@ -218,11 +250,11 @@ export default function RotateWallpaper() {
                         </button>
                     </div>
                 </div>
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-48 overflow-y-auto p-2 bg-white dark:bg-gray-900 rounded border">
-                    {wallpapers.map((wallpaper) => (
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-600 custom-scrollbar">
+                    {visibleWallpapers.map((wallpaper, index) => (
                         <div
                             key={wallpaper.id}
-                            className={`relative cursor-pointer rounded overflow-hidden ${selectedWallpapers.includes(wallpaper.id) ? 'ring-2 ring-blue-500' : ''}`}
+                            className={`relative cursor-pointer rounded overflow-hidden transition-all duration-200 hover:scale-105 ${selectedWallpapers.includes(wallpaper.id) ? 'ring-2 ring-green-500' : ''}`}
                             onClick={() => toggleSelection(wallpaper.id)}
                         >
                             <img
@@ -230,6 +262,12 @@ export default function RotateWallpaper() {
                                 alt={wallpaper.name}
                                 className="w-full aspect-video object-cover"
                                 loading="lazy"
+                                decoding="async"
+                                style={{
+                                    contentVisibility: 'auto',
+                                    containIntrinsicSize: '100px 56px',
+                                    willChange: index < 10 ? 'transform' : 'auto'
+                                }}
                                 onError={(e) => {
                                     const target = e.target as HTMLImageElement;
                                     target.style.display = 'none';
@@ -243,7 +281,7 @@ export default function RotateWallpaper() {
                                 }}
                             />
                             {selectedWallpapers.includes(wallpaper.id) && (
-                                <div className="absolute top-1 right-1 bg-blue-500 rounded-full w-4 h-4 flex items-center justify-center">
+                                <div className="absolute top-1 right-1 bg-green-500 rounded-full w-4 h-4 flex items-center justify-center">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         className="h-3 w-3 text-white"
@@ -256,6 +294,31 @@ export default function RotateWallpaper() {
                             )}
                         </div>
                     ))}
+
+                    {visibleCount < wallpapers.length && (
+                        <div
+                            ref={(el) => {
+                                if (el && observerRef.current) {
+                                    observerRef.current.observe(el);
+                                }
+                            }}
+                            className="col-span-full flex items-center justify-center p-4"
+                        >
+                            {isLoadingMore ? (
+                                <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500 mr-2"></div>
+                                    Loading more wallpapers...
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={loadMoreWallpapers}
+                                    className="text-sm px-3 py-1 bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded-md hover:bg-blue-200 dark:hover:bg-blue-700"
+                                >
+                                    Load More ({wallpapers.length - visibleCount} remaining)
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -273,7 +336,7 @@ export default function RotateWallpaper() {
                         disabled={selectedWallpapers.length < 2}
                         className={`px-4 py-2 text-white rounded ${selectedWallpapers.length < 2
                             ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-blue-500 hover:bg-blue-600'
+                            : 'bg-green-500 hover:bg-green-600'
                             }`}
                     >
                         Start Rotation
@@ -282,7 +345,7 @@ export default function RotateWallpaper() {
             </div>
 
             {wallpaperSettingStatus && (
-                <div className="mt-4 p-2 rounded text-sm text-center bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-900">
+                <div className="mt-4 p-2 rounded text-sm text-center bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-900">
                     {wallpaperSettingStatus}
                 </div>
             )}
