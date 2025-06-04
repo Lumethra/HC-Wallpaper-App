@@ -22,18 +22,19 @@ export default function Navbar({ currentView, setCurrentView }: NavbarProps) {
                 <div className="max-w-6xl flex w-full justify-center gap-8 py-2 px-2">
                     {navItems.map((item) => (
                         <button
-                            key={item.view}
-                            onClick={() => setCurrentView(item.view)}
-                            className={`flex flex-col items-center gap-1 px-4 py-1 rounded-lg transition
-${currentView === item.view
-    ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 font-bold"
-    : "text-gray-600 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900 hover:text-green-600 dark:hover:text-green-400 hover:scale-105"}
-`}
-style={{ transition: 'all 0.2s' }}
-                        >
-                            <span className="text-xl">{item.icon}</span>
-                            <span className="text-xs">{item.label}</span>
-                        </button>
+  key={item.view}
+  onClick={() => setCurrentView(item.view)}
+  className={`flex flex-col items-center gap-1 px-4 py-1 rounded-lg transition
+    ${currentView === item.view
+      ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 font-bold hover:scale-105"
+      : "text-gray-600 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900 hover:text-green-600 dark:hover:text-green-400 hover:scale-105"
+    }`
+  }
+  style={{ transition: 'all 0.2s' }}
+>
+  <span className="text-xl">{item.icon}</span>
+  <span className="text-xs">{item.label}</span>
+</button>
                     ))}
                 </div>
             </div>
