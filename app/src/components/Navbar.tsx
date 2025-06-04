@@ -25,10 +25,11 @@ export default function Navbar({ currentView, setCurrentView }: NavbarProps) {
                             key={item.view}
                             onClick={() => setCurrentView(item.view)}
                             className={`flex flex-col items-center gap-1 px-4 py-1 rounded-lg transition
-                ${currentView === item.view
-                                    ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 font-bold"
-                                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800"
-                                }`}
+${currentView === item.view
+    ? "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 font-bold"
+    : "text-gray-600 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900 hover:text-green-600 dark:hover:text-green-400 hover:scale-105"}
+`}
+style={{ transition: 'all 0.2s' }}
                         >
                             <span className="text-xl">{item.icon}</span>
                             <span className="text-xs">{item.label}</span>
