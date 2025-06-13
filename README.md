@@ -13,16 +13,33 @@
         </a>
     </p>
     <p>
-        <button>
-            <a href="https://lumethra.itch.io/hc-wallpaper-app">
-                the desktop app
-            </a>
-        </button>
-        <button>
-            <a href="https://hc-wallpaper-app.vercel.app">
-                the web app
-            </a>
-        </button>
+        <a href="https://lumethra.itch.io/hc-wallpaper-app" style="
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+            margin-right: 10px;
+        " onmouseover="this.style.backgroundColor='#45a049'" onmouseout="this.style.backgroundColor='#4CAF50'">
+            Desktop App
+        </a>
+        <a href="https://hc-wallpaper-app.vercel.app" style="
+            display: inline-block;
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+        " onmouseover="this.style.backgroundColor='#0056b3'" onmouseout="this.style.backgroundColor='#007BFF'">
+            Web App
+        </a>
     </p>
     <br/>
 </div>
