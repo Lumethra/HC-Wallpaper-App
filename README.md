@@ -30,6 +30,7 @@
 
 HC-Wallpaper-App is a social platform for sharing wallpapers with the Hack Club community.
 
+/*
 ## Compiling
 
 ### Prerequisites
@@ -81,7 +82,7 @@ cd HC-Wallpaper-App/app
 npm ci
 npm run electron:build
 ```
-
+*/
 ---
 
 <sup>
