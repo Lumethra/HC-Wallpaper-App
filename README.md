@@ -8,12 +8,12 @@
     <p>
         a wallpaper social platform for hack clubbers
         <br/>
-        <a href="[https://neon443.github.io](https://github.com/Lumethra)">
+        <a href="https://github.com/Lumethra">
             made by Lumethra
         </a>
     </p>
     <p>
-        <a href="https://testflight.apple.com/join/8aeqD8Q2](https://hc-wallpaper-app.vercel.app">
+        <a href="https://lumethra.itch.io/hc-wallpaper-app">
             try it out
         </a>
     </p>
