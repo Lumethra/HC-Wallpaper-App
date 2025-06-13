@@ -14,7 +14,10 @@
     </p>
     <p>
         <a href="https://lumethra.itch.io/hc-wallpaper-app">
-            try it out
+            try out the desktop app
+        </a>
+        <a href="https://hc-wallpaper-app.vercel.app">
+            try out the web app
         </a>
     </p>
     <br/>
