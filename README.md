@@ -16,6 +16,7 @@
         <a href="https://lumethra.itch.io/hc-wallpaper-app">
             try out the desktop app
         </a>
+        </br>
         <a href="https://hc-wallpaper-app.vercel.app">
             try out the web app
         </a>
