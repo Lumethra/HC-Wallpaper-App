@@ -18,7 +18,6 @@
                 the desktop app
             </a>
         </button>
-        </br>
         <button>
             <a href="https://hc-wallpaper-app.vercel.app">
                 the web app
