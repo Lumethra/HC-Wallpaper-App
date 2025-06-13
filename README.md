@@ -13,13 +13,17 @@
         </a>
     </p>
     <p>
-        <a href="https://lumethra.itch.io/hc-wallpaper-app">
-            try out the desktop app
-        </a>
+        <button>
+            <a href="https://lumethra.itch.io/hc-wallpaper-app">
+                the desktop app
+            </a>
+        </button>
         </br>
-        <a href="https://hc-wallpaper-app.vercel.app">
-            try out the web app
-        </a>
+        <button>
+            <a href="https://hc-wallpaper-app.vercel.app">
+                the web app
+            </a>
+        </button>
     </p>
     <br/>
 </div>
