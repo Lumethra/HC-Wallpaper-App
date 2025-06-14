@@ -6,18 +6,18 @@
         <img src="https://github.com/Lumethra/HC-Wallpaper-App/blob/main/app/public/icons/Abhay-App-Icon.jpg?raw=true" title="logo" alt="logo" width="100" />
     </p>
     <p>
-        a wallpaper social platform for hack clubbers
+        A wallpaper app with wallpapers made by HackClubbers (HackClub)
         <br/>
         <a href="https://github.com/Lumethra">
             made by Lumethra
         </a>
     </p>
     <p>
-        <a href="https://lumethra.itch.io/hc-wallpaper-app" style="display: inline-block; padding: 10px 20px; margin: 0 10px; background-color: #10b981; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; transition: background-color 0.3s ease;">
-            Desktop App
+        <a href="https://lumethra.itch.io/hc-wallpaper-app">
+            <img src="https://img.shields.io/badge/Desktop_App-10B981?style=for-the-badge&logo=itch.io&logoColor=white" alt="Desktop App" />
         </a>
-        <a href="https://hc-wallpaper-app.vercel.app" style="display: inline-block; padding: 10px 20px; margin: 0 10px; background-color:     #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; transition: background-color 0.3s ease;">
-            Web App
+        <a href="https://hc-wallpaper-app.vercel.app">
+            <img src="https://img.shields.io/badge/Web_App-3B82F6?style=for-the-badge&logo=vercel&logoColor=white" alt="Web App" />
         </a>
     </p>
     <br/>
