@@ -99,9 +99,17 @@ npm ci
 npm run electron:build
 ```
 -->
+
+</br>
+</br>
+
+<sup>
+    A README by Neon443.
+</sup>
+
 ---
 
 <sup>
-&copy; 2025 Lumethra.
+    &copy; 2025 Lumethra.
 </sup>
 
