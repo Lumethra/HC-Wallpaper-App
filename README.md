@@ -100,6 +100,8 @@ npm run electron:build
 ```
 -->
 
+</br>
+
 <sup>
     A README by Neon443.
 </sup>
