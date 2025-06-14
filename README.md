@@ -101,8 +101,9 @@ npm run electron:build
 -->
 
 <sup>
-    A ReadMe by Neon443
+    A README by Neon443.
 </sup>
+
 ---
 
 <sup>
