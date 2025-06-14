@@ -1,94 +1,28 @@
-# HC-Wallpaper-App
-
 <div align="center">
-    <br/>
-    <p>
-        <img src="https://github.com/Lumethra/HC-Wallpaper-App/blob/main/app/public/icons/Abhay-App-Icon.jpg?raw=true" title="logo" alt="logo" width="100" />
-    </p>
-    <p>
-        A wallpaper app with wallpapers made by HackClubbers (HackClub)
-        <br/>
-        <a href="https://github.com/Lumethra">
-            made by Lumethra
-        </a>
-    </p>
-    <p>
-        <a href="https://lumethra.itch.io/hc-wallpaper-app">
-            <img src="https://img.shields.io/badge/Desktop_App-10B981?style=for-the-badge&logo=itch.io&logoColor=white" alt="Desktop App" />
-        </a>
-        <a href="https://hc-wallpaper-app.vercel.app">
-            <img src="https://img.shields.io/badge/Web_App-3B82F6?style=for-the-badge&logo=vercel&logoColor=white" alt="Web App" />
-        </a>
-    </p>
-    <br/>
+  <img src="https://github.com/Lumethra/HC-Wallpaper-App/blob/main/app/public/icons/Abhay-App-Icon.jpg?raw=true" width="120" height="120" style="border-radius: 20px;" alt="HC Wallpaper App Logo" />
+  
+  # HC Wallpaper App
+  
+  <p>A social platform for sharing wallpapers with the Hack Club community</p>
+
+  <br/>
+  
+  <img src="https://path-to-screenshot.png" width="600" alt="App Screenshot" />
 </div>
 
-HC-Wallpaper-App is a social platform for sharing wallpapers with the Hack Club community.
+## ✨ Features
 
-<!--
-## Compiling
+- 🖼️ Browse community-created wallpapers
+- 🔄 Set wallpapers directly from the app
+- 📤 Upload your own creations and set from the app
+- 🌙 Dark mode support
+- 🖥️ Desktop app for Windows, macOS, and Linux
+- 🌐 Web version accessible from any browser
 
-### Prerequisites
-- Nodejs 20+
-- git
+## 🚀 Getting Started
 
-### macOS
-```zsh
-git clone https://github.com/Lumethra/HC-Wallpaper-App
-cd HC-Wallpaper-App/app
-mkdir -p ./build
-cat > ./build/entitlements.mac.plist << EOL
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-  <dict>
-    <key>com.apple.security.cs.allow-jit</key>
-    <true/>
-    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-    <true/>
-    <key>com.apple.security.cs.disable-library-validation</key>
-    <true/>
-    <key>com.apple.security.files.user-selected.read-write</key>
-    <true/>
-    <key>com.apple.security.automation.apple-events</key>
-    <true/>
-  </dict>
-</plist>
-EOL
-npm ci
-CSC_IDENTITY_AUTO_DISCOVERY=false npm run electron:build
-open dist
-```
+### Web App
+Visit [hc-wallpaper-app.vercel.app](https://hc-wallpaper-app.vercel.app) to use the web version.
 
-### Linux
-```zsh
-git clone https://github.com/Lumethra/HC-Wallpaper-App
-cd HC-Wallpaper-App/app
-sudo apt-get update
-sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libglib2.0-dev rpm
-npm ci
-npm run electron:build
-```
-
-### Windows
-```zsh
-git clone https://github.com/Lumethra/HC-Wallpaper-App
-cd HC-Wallpaper-App/app
-npm ci
-npm run electron:build
-```
--->
-
-</br>
-</br>
-
-<sup>
-    A README by Neon443.
-</sup>
-
----
-
-<sup>
-    &copy; 2025 Lumethra.
-</sup>
-
+### Desktop App
+Download the latest version from [itch.io](https://lumethra.itch.io/hc-wallpaper-app)
