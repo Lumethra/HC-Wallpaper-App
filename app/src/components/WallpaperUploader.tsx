@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { uploadAndSetWallpaper } from '../utils/wallpaper';
+import NotificationOverlay from './NotificationOverlay';
 
 export default function WallpaperUploader() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -169,31 +170,14 @@ export default function WallpaperUploader() {
                 )}
             </div>
 
-            {showSuccessPopup && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm mx-4 shadow-xl border border-gray-200 dark:border-gray-700">
-                        <div className="text-center">
-                            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900 mb-4">
-                                <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                                Wallpaper Set Successfully!
-                            </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                                Your new wallpaper has been applied.
-                            </p>
-                            <button
-                                onClick={() => setShowSuccessPopup(false)}
-                                className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
-                            >
-                                Great!
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <NotificationOverlay
+                show={showSuccessPopup}
+                onClose={() => setShowSuccessPopup(false)}
+                title="Wallpaper Set Successfully!"
+                message="Your new wallpaper has been applied."
+                type="success"
+                buttonText="Great!"
+            />
         </>
     );
 }

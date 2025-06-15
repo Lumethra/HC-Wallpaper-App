@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getWallpaperImageUrl } from '@/utils/api-config';
+import NotificationOverlay from '@/components/NotificationOverlay';
 
 type Wallpaper = {
     id: string;
@@ -20,6 +21,15 @@ export default function WallpaperGallery() {
     const [deviceType, setDeviceType] = useState('desktop');
     const [visibleCount, setVisibleCount] = useState(30);
     const [isElectron, setIsElectron] = useState(false);
+    const [showNotification, setShowNotification] = useState(false);
+    const [notificationProps, setNotificationProps] = useState({
+        title: '',
+        message: '',
+        type: 'success' as 'success' | 'error' | 'warning',
+        buttonText: 'Okay',
+        showDownloadButton: false,
+        downloadPath: ''
+    });
 
     useEffect(() => {
         const isMobile = /iPhone|iPad|Android/.test(navigator.userAgent);
@@ -29,6 +39,15 @@ export default function WallpaperGallery() {
     useEffect(() => {
         setIsElectron(typeof window !== 'undefined' && !!window.wallpaperAPI);
     }, []);
+
+    useEffect(() => {
+        if (showNotification) {
+            const timer = setTimeout(() => {
+                setShowNotification(false);
+            }, 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [showNotification]);
 
     // why is this needed to keep vs code quiet, it is working ;(
     type DeviceTypeSwitcherProps = {
@@ -143,6 +162,16 @@ export default function WallpaperGallery() {
                 if (isActive) {
                     setError("i couldn't load the wallpapers");
                     setLoading(false);
+
+                    setNotificationProps({
+                        title: 'Failed to Load Wallpapers',
+                        message: "I couldn't load the wallpapers. Please check your internet connection.",
+                        type: 'error',
+                        buttonText: 'Okay',
+                        showDownloadButton: false,
+                        downloadPath: ''
+                    });
+                    setShowNotification(true);
                 }
                 return;
             }
@@ -158,7 +187,6 @@ export default function WallpaperGallery() {
 
             const processedItems = items.map(parseWallpaperName);
 
-            /* why are there errors? why is it working like this? urgh, i just let it be, what vs code says should be right */
             processedItems.sort((a: { artist: string; displayName: any; name: any; }, b: { artist: string; displayName: any; name: any; }) => {
                 // First i sort by artist name (if it is there, i dare you not to be there)
                 const artistA = a.artist || '';
@@ -336,6 +364,18 @@ export default function WallpaperGallery() {
             )}
 
             <DeviceTypeSwitcher deviceType={deviceType} setDeviceType={setDeviceType} />
+
+            {/* Notification overlay */}
+            <NotificationOverlay
+                show={showNotification}
+                onClose={() => setShowNotification(false)}
+                title={notificationProps.title}
+                message={notificationProps.message}
+                type={notificationProps.type}
+                buttonText={notificationProps.buttonText}
+                showDownloadButton={notificationProps.showDownloadButton}
+                downloadPath={notificationProps.downloadPath}
+            />
         </div>
     );
 
@@ -343,38 +383,83 @@ export default function WallpaperGallery() {
 
     function handleSetWallpaper(wallpaper: Wallpaper) {
         if (!window.wallpaperAPI) {
-            alert('DOWNLOAD THE DESKTOP APP!!');
+            setNotificationProps({
+                title: 'Desktop App Required',
+                message: 'DOWNLOAD THE DESKTOP APP!!',
+                type: 'warning',
+                buttonText: 'Okay',
+                showDownloadButton: false,
+                downloadPath: ''
+            });
+            setShowNotification(true);
             return;
         }
 
         const setWallpaper = async () => {
             let response;
 
-            response = await fetch(getWallpaperImageUrl(wallpaper.path));
-            if (!response.ok) {
-                console.error("Failed to download wallpaper");
-                alert('Network problem. Check your connection?');
-                return;
-            }
+            try {
+                response = await fetch(getWallpaperImageUrl(wallpaper.path));
+                if (!response.ok) {
+                    console.error("Failed to download wallpaper");
+                    setNotificationProps({
+                        title: 'Network Error',
+                        message: 'Network problem. Check your connection?',
+                        type: 'error',
+                        buttonText: 'Okay',
+                        showDownloadButton: false,
+                        downloadPath: ''
+                    });
+                    setShowNotification(true);
+                    return;
+                }
 
-            const bobTheBlob = await response.blob();
+                const bobTheBlob = await response.blob();
 
-            const reader = new FileReader();
-            const dataUrl = await new Promise<string>((resolve) => {
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.readAsDataURL(bobTheBlob);
-            });
+                const reader = new FileReader();
+                const dataUrl = await new Promise<string>((resolve) => {
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.readAsDataURL(bobTheBlob);
+                });
 
-            const result = await window.wallpaperAPI.saveAndSetWallpaper({
-                name: wallpaper.name,
-                dataUrl: dataUrl,
-                format: wallpaper.format
-            });
+                const result = await window.wallpaperAPI.saveAndSetWallpaper({
+                    name: wallpaper.name,
+                    dataUrl: dataUrl,
+                    format: wallpaper.format
+                });
 
-            if (result.success) {
-                alert('Got it! Wallpaper applied.');
-            } else if (result.error && !result.error.includes('Please wait before setting')) {
-                alert('Hmm, something went wrong: ' + result.error);
+                if (result.success) {
+                    setNotificationProps({
+                        title: 'Wallpaper Set Successfully!',
+                        message: 'Your new wallpaper has been applied.',
+                        type: 'success',
+                        buttonText: 'Great!',
+                        showDownloadButton: false,
+                        downloadPath: ''
+                    });
+                    setShowNotification(true);
+                } else if (result.error && !result.error.includes('Please wait before setting')) {
+                    setNotificationProps({
+                        title: 'Error',
+                        message: 'Hmm, something went wrong: ' + result.error,
+                        type: 'error',
+                        buttonText: 'Okay',
+                        showDownloadButton: true,
+                        downloadPath: getWallpaperImageUrl(wallpaper.path)
+                    });
+                    setShowNotification(true);
+                }
+            } catch (error) {
+                console.error("Error setting wallpaper:", error);
+                setNotificationProps({
+                    title: 'Unexpected Error',
+                    message: error instanceof Error ? error.message : 'Something went wrong while setting the wallpaper.',
+                    type: 'error',
+                    buttonText: 'Okay',
+                    showDownloadButton: true,
+                    downloadPath: getWallpaperImageUrl(wallpaper.path)
+                });
+                setShowNotification(true);
             }
         };
 

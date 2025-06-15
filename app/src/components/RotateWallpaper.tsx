@@ -3,13 +3,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getWallpaperApiUrl, getWallpaperImageUrl } from '@/utils/api-config';
 import { ROOMBA_CAT_GIF } from '@/assets/roomba-cat-gif';
+import NotificationOverlay from './NotificationOverlay';
 
 type Wallpaper = {
     id: string;
     name: string;
     path: string;
+    size: number;
     format: string;
-}
+    displayName?: string;
+    artist?: string;
+    addedAt: number;
+};
 
 export default function RotateWallpaper() {
     const [isRotating, setIsRotating] = useState(false);
@@ -22,6 +27,15 @@ export default function RotateWallpaper() {
     const timer = useRef<number | null>(null);
     const lastWallpaperId = useRef<string | null>(null);
     const observerRef = useRef<IntersectionObserver | null>(null);
+    const [showNotification, setShowNotification] = useState(false);
+    const [notificationProps, setNotificationProps] = useState({
+        title: '',
+        message: '',
+        type: 'success' as 'success' | 'error' | 'warning',
+        buttonText: 'Great!',
+        showDownloadButton: false,
+        downloadPath: ''
+    });
 
     useEffect(() => {
         let isActive = true;
@@ -70,6 +84,15 @@ export default function RotateWallpaper() {
             selectedWallpapers
         }));
     }, [isRotating, switchingInterval, selectedWallpapers]);
+
+    useEffect(() => {
+        if (showNotification) {
+            const timer = setTimeout(() => {
+                setShowNotification(false);
+            }, 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [showNotification]);
 
     const loadMoreWallpapers = useCallback(() => {
         if (visibleCount < wallpapers.length && !isLoadingMore) {
@@ -137,7 +160,18 @@ export default function RotateWallpaper() {
     function setWallpaper(wallpaper: Wallpaper) {
         fetch(getWallpaperImageUrl(wallpaper.path))
             .then(response => {
-                if (!response.ok) throw new Error("The download failed, why you let this happen? Why you blocked it or stopped it? The artists need a promotion, they need ur download");
+                if (!response.ok) {
+                    setNotificationProps({
+                        title: 'Download Failed',
+                        message: "The wallpaper download failed. Please check your internet connection.",
+                        type: 'error',
+                        buttonText: 'Okay',
+                        showDownloadButton: false,
+                        downloadPath: ''
+                    });
+                    setShowNotification(true);
+                    throw new Error("The download failed, why you let this happen? Why you blocked it or stopped it? The artists need a promotion, they need ur download");
+                }
                 return response.blob();
             })
             .then(bobTheBlob => {
@@ -149,19 +183,48 @@ export default function RotateWallpaper() {
                         dataUrl: typeof reader.result === 'string' ? reader.result : '',
                         format: wallpaper.format
                     }).then(result => {
-                        setWallpaperSettingStatus(result.success
-                            ? `Current wallpaper: ${wallpaper.name}`
-                            : `What did you do, but anyways, congrats to breaking the code, the wallpaper failed to set`
-                        );
+                        if (result.success) {
+                            setNotificationProps({
+                                title: 'Wallpaper Set',
+                                message: `Current wallpaper: ${wallpaper.name}`,
+                                type: 'success',
+                                buttonText: 'Great!',
+                                showDownloadButton: false,
+                                downloadPath: ''
+                            });
+                            setShowNotification(true);
+                        } else {
+                            setNotificationProps({
+                                title: 'Failed to Set Wallpaper',
+                                message: result.error || "What did you do, but anyways, congrats to breaking the code, the wallpaper failed to set",
+                                type: 'error',
+                                buttonText: 'Okay',
+                                showDownloadButton: true,
+                                downloadPath: getWallpaperImageUrl(wallpaper.path)
+                            });
+                            setShowNotification(true);
+                        }
                     });
                 };
 
                 reader.readAsDataURL(bobTheBlob);
+            })
+            .catch(error => {
+                console.error("Error setting wallpaper:", error);
             });
     }
 
     function startWallpaperChange(mins = switchingInterval) {
         if (selectedWallpapers.length < 2) {
+            setNotificationProps({
+                title: 'Cannot Start Rotation',
+                message: 'You want to rotate through 1 wallpaper? Are you crazy? Am I a duplicating machine?? No, so SELECT AT LEAST 2',
+                type: 'warning',
+                buttonText: 'Okay',
+                showDownloadButton: false,
+                downloadPath: ''
+            });
+            setShowNotification(true);
             setWallpaperSettingStatus('You want to rotate through 1 wallpaper? Are you crazy? Am I a duplicating machine?? No, so SELECT AT LEAST 2');
             return;
         }
@@ -176,6 +239,16 @@ export default function RotateWallpaper() {
 
         setIsRotating(true);
         setWallpaperSettingStatus(`Changing ur wallpaper every ${mins} minutes, you now can sit back and relax, I'll handle this.`);
+
+        setNotificationProps({
+            title: 'Rotation Started',
+            message: `Changing your wallpaper every ${mins} minutes. You can sit back and relax now!`,
+            type: 'success',
+            buttonText: 'Great!',
+            showDownloadButton: false,
+            downloadPath: ''
+        });
+        setShowNotification(true);
     }
 
     function stopChanging() {
@@ -186,15 +259,20 @@ export default function RotateWallpaper() {
 
         setIsRotating(false);
         setWallpaperSettingStatus('No rotation for me anymore, I am now jobless, you monster. :(');
+
+        setNotificationProps({
+            title: 'Rotation Stopped',
+            message: 'No rotation for me anymore, I am now jobless, you monster. :(',
+            type: 'warning',
+            buttonText: 'Sorry!',
+            showDownloadButton: false,
+            downloadPath: ''
+        });
+        setShowNotification(true);
     }
 
     function gimmeAll() {
-        let ids = [];
-        for (let i = 0; i < wallpapers.length; i++) {
-            const w = wallpapers[i];
-            ids.push(w.id);
-        }
-        setSelectedWallpapers(ids);
+        setSelectedWallpapers(wallpapers.map(w => w.id));
     }
 
     function clearEm() {
@@ -344,11 +422,17 @@ export default function RotateWallpaper() {
                 )}
             </div>
 
-            {wallpaperSettingStatus && (
-                <div className="mt-4 p-2 rounded text-sm text-center bg-green-100 text-green-700 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-900">
-                    {wallpaperSettingStatus}
-                </div>
-            )}
+            {/* Notification overlay */}
+            <NotificationOverlay
+                show={showNotification}
+                onClose={() => setShowNotification(false)}
+                title={notificationProps.title}
+                message={notificationProps.message}
+                type={notificationProps.type}
+                buttonText={notificationProps.buttonText}
+                showDownloadButton={notificationProps.showDownloadButton}
+                downloadPath={notificationProps.downloadPath}
+            />
         </div>
     );
 }
