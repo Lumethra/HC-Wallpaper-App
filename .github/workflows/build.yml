@@ -90,23 +90,28 @@ jobs:
     
     - name: Upload Windows artifacts
       if: matrix.os == 'windows-latest'
-      uses: actions/upload-artifact@v4 
+      uses: actions/upload-artifact@v4
       with:
         name: windows-builds
         path: |
-          app/dist/*.exe
-          app/dist/*.msi
-          app/dist/*.zip
-        if-no-files-found: warn 
-    
+          app/dist/**/*.exe
+          app/dist/**/*.msi
+          app/dist/**/*.zip
+          app/out/**/*.exe
+          app/out/**/*.msi
+          app/out/**/*.zip
+        if-no-files-found: warn
+
     - name: Upload macOS artifacts
       if: matrix.os == 'macos-latest'
       uses: actions/upload-artifact@v4
       with:
         name: macos-builds
         path: |
-          app/dist/*.dmg
-          app/dist/*.zip
+          app/dist/**/*.dmg
+          app/dist/**/*.zip
+          app/out/**/*.dmg
+          app/out/**/*.zip
         if-no-files-found: warn 
     
     - name: Upload Linux artifacts
