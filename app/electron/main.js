@@ -488,8 +488,6 @@ async function safeSetWallpaper(filePath) {
 
 async function tryOtherWallpaperMethods(filePath) {
     try {
-        console.log(`Setting wallpaper on ${process.platform} using path: ${filePath}`);
-
         if (process.platform === 'darwin') {
             console.log('Using macOS wallpaper method with path:', filePath);
 
@@ -526,124 +524,6 @@ async function tryOtherWallpaperMethods(filePath) {
             return true;
         }
 
-        if (process.platform === 'linux') {
-            try {
-                const wallpaperModule = require('wallpaper');
-                await wallpaperModule.set(filePath);
-                console.log('Successfully set wallpaper on Linux using wallpaper module');
-                return true;
-            } catch (err) {
-                console.warn('Linux wallpaper module failed, trying desktop-specific methods');
-
-                const { execFile } = require('child_process');
-                const util = require('util');
-                const execFilePromise = util.promisify(execFile);
-                const exec = util.promisify(require('child_process').exec);
-
-                const fullPath = path.resolve(filePath);
-
-                let desktopEnv = process.env.XDG_CURRENT_DESKTOP || '';
-                desktopEnv = desktopEnv.toLowerCase();
-
-                console.log(`Detected Linux desktop environment: ${desktopEnv}`);
-
-                if (desktopEnv.includes('gnome') ||
-                    desktopEnv.includes('unity') ||
-                    desktopEnv.includes('cinnamon') ||
-                    desktopEnv.includes('budgie')) {
-
-                    try {
-                        await execFilePromise('gsettings', ['set', 'org.gnome.desktop.background', 'picture-uri', `file://${fullPath}`]);
-                        console.log('Set wallpaper using gsettings picture-uri');
-
-                        try {
-                            await execFilePromise('gsettings', ['set', 'org.gnome.desktop.background', 'picture-uri-dark', `file://${fullPath}`]);
-                        } catch (e) { /* ignore */ }
-
-                        return true;
-                    } catch (err) {
-                        console.warn('gsettings method failed:', err.message);
-                        throw err;
-                    }
-                }
-
-                else if (desktopEnv.includes('kde')) {
-                    try {
-                        const script = `
-                        var allDesktops = desktops();
-                        for (var i=0; i<allDesktops.length; i++) {
-                            d = allDesktops[i];
-                            d.wallpaperPlugin = "org.kde.image";
-                            d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");
-                            d.writeConfig("Image", "${fullPath.replace(/'/g, "\\'")}");
-                        }
-                        `;
-
-                        await execFilePromise('qdbus', ['org.kde.plasmashell', '/PlasmaShell', 'org.kde.PlasmaShell.evaluateScript', script]);
-                        console.log('Set wallpaper using KDE Plasma script');
-                        return true;
-                    } catch (err) {
-                        console.warn('KDE method failed:', err.message);
-                        throw err;
-                    }
-                }
-
-                else if (desktopEnv.includes('xfce')) {
-                    try {
-                        const { stdout } = await exec("xfconf-query -c xfce4-desktop -l | grep last-image");
-                        const properties = stdout.trim().split('\n');
-
-                        if (properties.length === 0) {
-                            throw new Error('No XFCE desktop properties found');
-                        }
-
-                        let success = false;
-                        for (const property of properties) {
-                            try {
-                                await execFilePromise('xfconf-query', ['-c', 'xfce4-desktop', '-p', property, '-s', fullPath]);
-                                success = true;
-                            } catch (e) {
-                                console.warn(`Failed to set XFCE property ${property}:`, e.message);
-                            }
-                        }
-
-                        if (success) {
-                            console.log('Set wallpaper using XFCE method');
-                            return true;
-                        }
-                        throw new Error('Failed to set any XFCE desktop properties');
-                    } catch (err) {
-                        console.warn('XFCE method failed:', err.message);
-                        throw err;
-                    }
-                }
-
-                else if (desktopEnv.includes('mate')) {
-                    try {
-                        await execFilePromise('gsettings', ['set', 'org.mate.background', 'picture-filename', fullPath]);
-                        console.log('Set wallpaper using MATE method');
-                        return true;
-                    } catch (err) {
-                        console.warn('MATE method failed:', err.message);
-                        throw err;
-                    }
-                }
-
-                else {
-                    try {
-                        await execFilePromise('feh', ['--bg-fill', fullPath]).catch(() =>
-                            execFilePromise('nitrogen', ['--set-zoom-fill', fullPath])
-                        );
-                        console.log('Set wallpaper using feh/nitrogen');
-                        return true;
-                    } catch (err) {
-                        console.warn('feh/nitrogen methods failed:', err.message);
-                        throw err;
-                    }
-                }
-            }
-        }
-
         if (process.env.WALLPAPER_BINARY && process.platform === 'win32') {
             const { execFile } = require('child_process');
 
@@ -661,7 +541,7 @@ async function tryOtherWallpaperMethods(filePath) {
         await setWallpaper(filePath);
         return true;
     } catch (err) {
-        console.error('All wallpaper setting methods failed:', err);
+        console.error('Wallpaper setting error:', err);
         throw new Error(`Failed to set wallpaper: ${err.message}`);
     }
 }

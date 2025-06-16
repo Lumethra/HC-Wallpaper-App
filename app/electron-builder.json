@@ -12,23 +12,9 @@
         "package.json"
     ],
     "win": {
-        "icon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
-        "target": [
-            "portable",
-            "nsis"
-        ]
-    },
-    "nsis": {
-        "oneClick": false,
-        "allowToChangeInstallationDirectory": true,
-        "createDesktopShortcut": true,
-        "createStartMenuShortcut": true,
-        "shortcutName": "HC Wallpaper App",
-        "uninstallDisplayName": "HC Wallpaper App",
-        "artifactName": "${productName}-Setup-${version}.${ext}",
-        "installerIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
-        "uninstallerIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
-        "installerHeaderIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico"
+        "target": "portable",
+        "artifactName": "${productName}-Portable-${version}.${ext}",
+        "icon": "public/icons/formatted-icons/Abhay-App-Icon.ico"
     },
     "mac": {
         "target": [
@@ -40,17 +26,10 @@
         "target": [
             "AppImage",
             "deb",
-            "rpm",
-            "snap",
-            "pacman",
-            "freebsd",
-            "tar.gz"
+            "rpm"
         ],
         "category": "Utility",
-        "icon": "public/icons/formatted-icons/Abhay-App-Icon.png",
-        "maintainer": "Hack Club",
-        "vendor": "Hack Club",
-        "synopsis": "An application for managing desktop wallpapers"
+        "icon": "public/icons/formatted-icons/Abhay-App-Icon.png"
     },
     "extraResources": [
         {

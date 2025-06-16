@@ -1,5 +1,8 @@
 # TODO's
 
+- add Linux arm build
+- add Windows Installer build
+- add real MacOS build
 - new app bar design
 
 - wallpaper rotation intervall should be bigger/there should be things to select like 15min, 30min, 1h, 2h, 5h, 12h, 1day, 2day, 3day, custom

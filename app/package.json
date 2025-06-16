@@ -15,29 +15,24 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build || node node_modules/.bin/next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "electron:dev": "concurrently \"cross-env npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron:gif": "node scripts/convert-gif.js",
-    "electron:build": "cross-env ELECTRON=true npm run build && node scripts/electron-build-helper.js",
-    "electron:build:mac": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=darwin node scripts/electron-build-helper.js",
-    "electron:build:win": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=win32 node scripts/electron-build-helper.js",
-    "electron:build:linux": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=linux node scripts/electron-build-helper.js",
-    "electron:build:linux:arm64": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=linux ARCH=arm64 node scripts/electron-build-helper.js",
-    "electron:build:linux:armv7l": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=linux ARCH=armv7l node scripts/electron-build-helper.js",
-    "electron:build:win:portable": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=win32 WIN_BUILD_TYPE=portable node scripts/electron-build-helper.js",
-    "electron:build:win:installer": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=win32 WIN_BUILD_TYPE=installer node scripts/electron-build-helper.js"
+    "electron:build": "cross-env ELECTRON=true next build && node scripts/electron-build-helper.js",
+    "electron:clean": "node scripts/clean.js",
+    "electron:convertimg": "node scripts/convert-icons.js",
+    "electron:gif": "node scripts/convert-gif.js"
   },
   "dependencies": {
-    "next": "14.0.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "wallpaper": "6.1.0",
-    "@vercel/analytics": "^1.1.1",
-    "@vercel/speed-insights": "^1.0.2",
-    "react-icons": "^4.11.0",
-    "geist": "^1.0.0"
+    "@vercel/analytics": "^1.5.0",
+    "@vercel/speed-insights": "^1.2.0",
+    "electron-is-dev": "^3.0.1",
+    "next": "^15.3.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-icons": "^5.5.0",
+    "wallpaper": "^6.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
