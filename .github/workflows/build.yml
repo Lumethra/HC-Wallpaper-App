@@ -41,6 +41,9 @@ jobs:
         working-directory: ./app
         run: npm ci
       
+      - name: Install Next.js globally
+        run: npm install -g next
+      
       - name: Build for Windows
         if: matrix.os == 'windows-latest'
         working-directory: ./app
