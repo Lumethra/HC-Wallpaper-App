@@ -28,7 +28,8 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev rpm
+        # Use libwebkit2gtk-4.1-dev instead of 4.0 version
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev rpm
     
     - name: Update package.json scripts
       shell: bash
@@ -88,6 +89,14 @@ jobs:
       run: npm run electron:build:linux:armv7l
       continue-on-error: true 
     
+    - name: List build outputs for debugging
+      if: always()
+      shell: bash
+      run: |
+        echo "=== Listing contents of dist and out directories ==="
+        find app/dist -type f -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.snap" -o -name "*.tar.gz" -o -name "*.zip" || echo "No files in app/dist"
+        find app/out -type f -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.snap" -o -name "*.tar.gz" -o -name "*.zip" || echo "No files in app/out"
+    
     - name: Upload Windows artifacts
       if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v4
@@ -120,11 +129,11 @@ jobs:
       with:
         name: linux-builds
         path: |
-          app/dist/*.AppImage
-          app/dist/*.deb
-          app/dist/*.rpm
-          app/dist/*.snap
-          app/dist/*.tar.gz
+          app/dist/**/*.AppImage
+          app/dist/**/*.deb
+          app/dist/**/*.rpm
+          app/dist/**/*.snap
+          app/dist/**/*.tar.gz
         if-no-files-found: warn 
 
   release:
@@ -133,7 +142,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4 
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
       
