@@ -167,16 +167,13 @@ jobs:
     - name: Build for Linux
       if: matrix.os == 'ubuntu-latest'
       working-directory: ./app
-      env:
-        USE_HARD_LINKS: false
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Install required global packages
-        npm install -g cross-env electron-builder
+        npm install -g electron-builder
         
-        # Build only AppImage, DEB and RPM formats
-        cross-env ELECTRON=true npm run build && cross-env PLATFORM=linux LINUX_TARGET="AppImage deb rpm" node scripts/electron-build-helper.js
-    
+        # Build with all formats - the correct way
+        electron-builder --config electron-builder.json --linux
+
     - name: Build for Linux ARM64
       if: matrix.os == 'ubuntu-latest'
       working-directory: ./app
