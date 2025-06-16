@@ -63,7 +63,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: app/dist/*.exe
+          path: |
+            app/dist/*.exe
+            app/dist/*.msi
           if-no-files-found: warn
       
       - name: Upload macOS artifacts
@@ -83,4 +85,51 @@ jobs:
             app/dist/*.AppImage
             app/dist/*.deb
             app/dist/*.rpm
+          if-no-files-found: warn
+  
+  linux-arm-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm ci
+      
+      - name: Build for Linux ARM64
+        working-directory: ./app
+        run: npm run electron:build:linux:arm64
+      
+      - name: Upload Linux ARM64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-build
+          path: |
+            app/dist/*arm64.AppImage
+            app/dist/*arm64.deb
+            app/dist/*arm64.rpm
+            app/dist/*arm64.snap
+          if-no-files-found: warn
+
+      - name: Build for Linux ARMv7l
+        working-directory: ./app
+        run: npm run electron:build:linux:armv7l
+
+      - name: Upload Linux ARMv7l artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-armv7l-build
+          path: |
+            app/dist/*armv7l.AppImage
+            app/dist/*armv7l.deb
+            app/dist/*armv7l.rpm
+            app/dist/*armv7l.snap
           if-no-files-found: warn

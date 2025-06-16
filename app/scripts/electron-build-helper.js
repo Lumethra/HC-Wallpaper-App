@@ -269,11 +269,20 @@ function updateElectronBuilderConfig() {
 // Make sure to call these functions
 updateElectronBuilderConfig();
 
+// Update the getBuildCommand function to support Windows installer
 function getBuildCommand() {
     let buildCommand = 'electron-builder --config electron-builder.json';
 
     if (platform === 'win32') {
-        buildCommand += ' --win portable';
+        // Check for build type to allow building just one format
+        if (process.env.WIN_BUILD_TYPE === 'installer') {
+            buildCommand += ' --win nsis';
+        } else if (process.env.WIN_BUILD_TYPE === 'portable') {
+            buildCommand += ' --win portable';
+        } else {
+            // Build both by default
+            buildCommand += ' --win';
+        }
     } else if (platform === 'darwin') {
         buildCommand += ' --mac dmg';
         // Check if running on Apple Silicon
@@ -281,7 +290,12 @@ function getBuildCommand() {
             buildCommand += ' --arm64';
         }
     } else if (platform === 'linux') {
-        buildCommand += ' --linux AppImage';
+        buildCommand += ' --linux';
+
+        const arch = process.env.ARCH || os.arch();
+        if (arch === 'arm64' || arch === 'armv7l') {
+            buildCommand += ` --${arch}`;
+        }
     }
 
     return buildCommand;

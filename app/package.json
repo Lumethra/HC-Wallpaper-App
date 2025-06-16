@@ -23,7 +23,11 @@
     "electron:build": "cross-env ELECTRON=true npm run build && node scripts/electron-build-helper.js",
     "electron:build:mac": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=darwin node scripts/electron-build-helper.js",
     "electron:build:win": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=win32 node scripts/electron-build-helper.js",
-    "electron:build:linux": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=linux node scripts/electron-build-helper.js"
+    "electron:build:linux": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=linux node scripts/electron-build-helper.js",
+    "electron:build:linux:arm64": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=linux ARCH=arm64 node scripts/electron-build-helper.js",
+    "electron:build:linux:armv7l": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=linux ARCH=armv7l node scripts/electron-build-helper.js",
+    "electron:build:win:portable": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=win32 WIN_BUILD_TYPE=portable node scripts/electron-build-helper.js",
+    "electron:build:win:installer": "cross-env ELECTRON=true npm run build && cross-env PLATFORM=win32 WIN_BUILD_TYPE=installer node scripts/electron-build-helper.js"
   },
   "dependencies": {
     "wallpaper": "^6.1.0"

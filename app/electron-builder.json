@@ -12,9 +12,23 @@
         "package.json"
     ],
     "win": {
-        "target": "portable",
-        "artifactName": "${productName}-Portable-${version}.${ext}",
-        "icon": "public/icons/formatted-icons/Abhay-App-Icon.ico"
+        "icon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
+        "target": [
+            "portable",
+            "nsis"
+        ]
+    },
+    "nsis": {
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "shortcutName": "HC Wallpaper App",
+        "uninstallDisplayName": "HC Wallpaper App",
+        "artifactName": "${productName}-Setup-${version}.${ext}",
+        "installerIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
+        "uninstallerIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
+        "installerHeaderIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico"
     },
     "mac": {
         "target": [
@@ -26,7 +40,11 @@
         "target": [
             "AppImage",
             "deb",
-            "rpm"
+            "rpm",
+            "snap",
+            "pacman",
+            "freebsd",
+            "tar.gz"
         ],
         "category": "Utility",
         "icon": "public/icons/formatted-icons/Abhay-App-Icon.png",
