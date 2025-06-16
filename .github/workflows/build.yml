@@ -30,30 +30,62 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev rpm
     
-    - name: Add missing packages
-      working-directory: ./app
-      run: |
-        npm install react-icons@4.11.0 @vercel/analytics@1.1.1 @vercel/speed-insights@1.0.2 geist
-
-    - name: Patch source files
+    - name: Replace problematic imports
       shell: bash
       run: |
         cd app
-        # Patch layout.tsx
-        sed -i.bak 's/import { Geist, Geist_Mono } from "next\/font\/google";/const Geist = (options) => ({ className: "", variable: "--font-geist-sans", style: {} });\nconst Geist_Mono = (options) => ({ className: "", variable: "--font-geist-mono", style: {} });\nconst geistSans = { variable: "--font-geist-sans" };\nconst geistMono = { variable: "--font-geist-mono" };/' src/app/layout.tsx
-        sed -i.bak 's/import { Analytics } from "@vercel\/analytics\/react";/const Analytics = () => null;/' src/app/layout.tsx
-        sed -i.bak 's/import { SpeedInsights } from "@vercel\/speed-insights\/next";/const SpeedInsights = () => null;/' src/app/layout.tsx
-        # Patch Navbar.tsx
+        
+        # Fix layout.tsx by completely replacing the font import
+        sed -i.bak 's/import { Geist, Geist_Mono } from "next\/font\/google";/const geistSans = { variable: "--font-geist-sans" };\nconst geistMono = { variable: "--font-geist-mono" };/' src/app/layout.tsx
+        
+        # Remove Vercel imports 
+        sed -i.bak 's/import { Analytics } from '"'"'@vercel\/analytics\/react'"'"';/const Analytics = () => null;/' src/app/layout.tsx
+        sed -i.bak 's/import { SpeedInsights } from "@vercel\/speed-insights\/next"/const SpeedInsights = () => null;/' src/app/layout.tsx
+        
+        # Remove original geistSans and geistMono instantiations
+        sed -i.bak '/const geistSans = Geist(/,+3d' src/app/layout.tsx
+        sed -i.bak '/const geistMono = Geist_Mono(/,+3d' src/app/layout.tsx
+        
+        # Replace React icons
         sed -i.bak 's/import { FiHome, FiImage, FiRotateCcw, FiMonitor } from "react-icons\/fi";/const FiHome = (props) => <span role="img" aria-label="home" {...props}>🏠<\/span>;\nconst FiImage = (props) => <span role="img" aria-label="image" {...props}>🖼️<\/span>;\nconst FiRotateCcw = (props) => <span role="img" aria-label="rotate" {...props}>🔄<\/span>;\nconst FiMonitor = (props) => <span role="img" aria-label="monitor" {...props}>🖥️<\/span>;/' src/components/Navbar.tsx
-        # Create clean script
-        mkdir -p scripts
-        echo 'const fs = require("fs"); const path = require("path"); const dirsToClean = ["out", "dist", ".next"]; for(const dir of dirsToClean) { const dirPath = path.join(__dirname, "..", dir); if (fs.existsSync(dirPath)) { fs.rmSync(dirPath, { recursive: true, force: true }); } }' > scripts/clean.js
-        # Make sure it's in package.json
-        node -e 'const fs = require("fs"); const pkg = JSON.parse(fs.readFileSync("package.json", "utf8")); if (!pkg.scripts) pkg.scripts = {}; pkg.scripts.electron_clean = "node scripts/clean.js"; fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));'
+    
+    - name: Add missing dependencies
+      working-directory: ./app
+      run: |
+        npm install --save react-icons@4.11.0 @vercel/analytics@1.1.1 @vercel/speed-insights@1.0.2 wallpaper@6.1.0
+    
+    - name: Create clean script
+      shell: bash
+      run: |
+        mkdir -p app/scripts
+        cat > app/scripts/clean.js << 'EOF'
+        const fs = require('fs');
+        const path = require('path');
+
+        const dirsToClean = ['out', 'dist', 'installer', '.next'];
+        
+        // Clean main directories
+        for (const dir of dirsToClean) {
+            const dirPath = path.join(__dirname, '..', dir);
+            if (fs.existsSync(dirPath)) {
+                console.log(`Cleaning ${dir} directory...`);
+                try {
+                    fs.rmSync(dirPath, { recursive: true, force: true });
+                    console.log(`✓ Removed ${dir}`);
+                } catch (err) {
+                    console.error(`Error removing ${dir}:`, err);
+                }
+            }
+        }
+        EOF
 
     - name: Install dependencies
       working-directory: ./app
       run: npm install --no-package-lock
+    
+    - name: Clean build directories
+      working-directory: ./app
+      run: node scripts/clean.js || echo "Clean script execution skipped"
     
     - name: Build for Windows
       if: matrix.os == 'windows-latest'
@@ -62,7 +94,6 @@ jobs:
         USE_HARD_LINKS: false
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        node scripts/clean.js || echo "Clean script ran or skipped"
         npm run electron:build:win:portable
         npm run electron:build:win:installer
     
@@ -73,9 +104,7 @@ jobs:
         CSC_IDENTITY_AUTO_DISCOVERY: false
         USE_HARD_LINKS: false
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        node scripts/clean.js || echo "Clean script ran or skipped"
-        npm run electron:build:mac
+      run: npm run electron:build:mac
     
     - name: Build for Linux
       if: matrix.os == 'ubuntu-latest'
@@ -83,9 +112,7 @@ jobs:
       env:
         USE_HARD_LINKS: false
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        node scripts/clean.js || echo "Clean script ran or skipped"
-        npm run electron:build:linux
+      run: npm run electron:build:linux
     
     - name: Build for Linux ARM64
       if: matrix.os == 'ubuntu-latest'
@@ -93,8 +120,7 @@ jobs:
       env:
         USE_HARD_LINKS: false
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        npm run electron:build:linux:arm64
+      run: npm run electron:build:linux:arm64
     
     - name: Build for Linux ARMv7l
       if: matrix.os == 'ubuntu-latest'
@@ -102,14 +128,13 @@ jobs:
       env:
         USE_HARD_LINKS: false
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        npm run electron:build:linux:armv7l
+      run: npm run electron:build:linux:armv7l
     
-    - name: List build outputs
+    - name: List build outputs for debugging
       if: always()
       shell: bash
       run: |
-        echo "=== Listing all files in app directory ==="
+        echo "=== Listing all build artifacts ==="
         find app -type f -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.snap" -o -name "*.tar.gz" -o -name "*.zip" || echo "No matching files found"
     
     - name: Upload Windows artifacts
