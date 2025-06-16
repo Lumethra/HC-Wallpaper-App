@@ -29,7 +29,10 @@
             "rpm"
         ],
         "category": "Utility",
-        "icon": "public/icons/formatted-icons/Abhay-App-Icon.png"
+        "icon": "public/icons/formatted-icons/Abhay-App-Icon.png",
+        "maintainer": "Hack Club",
+        "vendor": "Hack Club",
+        "synopsis": "An application for managing desktop wallpapers"
     },
     "extraResources": [
         {

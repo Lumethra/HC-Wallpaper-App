@@ -3,7 +3,8 @@ const path = require('path');
 const { execSync } = require('child_process');
 const os = require('os');
 
-const platform = process.platform;
+// Allow platform override via environment variable (useful for CI)
+const platform = process.env.PLATFORM || process.platform;
 console.log(`Building for platform: ${platform}`);
 
 // Convert icons properly by executing the script directly
@@ -18,6 +19,45 @@ try {
 } catch (err) {
     console.error('Error converting application icons:', err);
     // Continue with the build even if icon conversion fails
+}
+
+// Execute macOS-specific icon generation if needed
+if (platform === 'darwin') {
+    console.log('Setting up macOS specific resources...');
+
+    try {
+        // Create build directory if it doesn't exist
+        const buildDir = path.join(__dirname, '..', 'build');
+        if (!fs.existsSync(buildDir)) {
+            fs.mkdirSync(buildDir, { recursive: true });
+        }
+
+        // Create entitlements file if it doesn't exist
+        const entitlementsPath = path.join(buildDir, 'entitlements.mac.plist');
+        if (!fs.existsSync(entitlementsPath)) {
+            console.log('Creating macOS entitlements file...');
+            const entitlementsContent = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+  </dict>
+</plist>`;
+            fs.writeFileSync(entitlementsPath, entitlementsContent);
+            console.log('✓ Created macOS entitlements file');
+        }
+    } catch (err) {
+        console.error('Error setting up macOS resources:', err);
+    }
 }
 
 console.log('Generating remote wallpaper catalog...');
@@ -139,6 +179,7 @@ function updateElectronBuilderConfig() {
 
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
+        // Common updates for all platforms
         if (!config.asarUnpack || !config.asarUnpack.includes('node_modules/wallpaper/**/*')) {
             config.asarUnpack = config.asarUnpack || [];
             if (!config.asarUnpack.includes('node_modules/wallpaper/**/*')) {
@@ -151,7 +192,9 @@ function updateElectronBuilderConfig() {
             config.extraResources = [];
         }
 
+        // Platform specific updates
         if (platform === 'win32') {
+            // Windows-specific config updates
             let hasWallpaperBinary = false;
             for (const resource of config.extraResources) {
                 if (resource.from && resource.from.includes('wallpaper')) {
@@ -168,8 +211,39 @@ function updateElectronBuilderConfig() {
                 });
                 console.log('✓ Added Windows wallpaper binary to extraResources');
             }
+        } else if (platform === 'darwin') {
+            // macOS-specific config updates
+            if (!config.mac) {
+                config.mac = {};
+            }
+
+            config.mac = {
+                ...config.mac,
+                category: "public.app-category.utilities",
+                target: ["dmg", "zip"],
+                icon: "public/icons/formatted-icons/Abhay-App-Icon.icns",
+                hardenedRuntime: true,
+                gatekeeperAssess: false,
+                entitlements: "build/entitlements.mac.plist",
+                entitlementsInherit: "build/entitlements.mac.plist",
+                darkModeSupport: true
+            };
+
+            if (!config.dmg) {
+                config.dmg = {
+                    iconSize: 100,
+                    contents: [
+                        { x: 130, y: 220 },
+                        { x: 410, y: 220, type: "link", path: "/Applications" }
+                    ],
+                    window: { width: 540, height: 380 }
+                };
+            }
+
+            console.log('✓ Updated macOS electron-builder configuration');
         }
 
+        // Add ICU data for all platforms
         let hasICUData = false;
         for (const resource of config.extraResources) {
             if (resource.from && resource.from.includes('icudtl.dat')) {
@@ -192,6 +266,7 @@ function updateElectronBuilderConfig() {
     }
 }
 
+// Make sure to call these functions
 updateElectronBuilderConfig();
 
 function getBuildCommand() {
@@ -201,6 +276,10 @@ function getBuildCommand() {
         buildCommand += ' --win portable';
     } else if (platform === 'darwin') {
         buildCommand += ' --mac dmg';
+        // Check if running on Apple Silicon
+        if (os.arch() === 'arm64') {
+            buildCommand += ' --arm64';
+        }
     } else if (platform === 'linux') {
         buildCommand += ' --linux AppImage';
     }
@@ -209,7 +288,6 @@ function getBuildCommand() {
 }
 
 console.log('Running electron-builder...');
-
 try {
     const buildCommand = getBuildCommand();
     console.log(`Executing: ${buildCommand}`);

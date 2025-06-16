@@ -1,7 +1,16 @@
 name: Build Electron App
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
 
 jobs:
   build:
@@ -28,44 +37,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libglib2.0-dev rpm
       
-      - name: Create macOS entitlements file
-        if: matrix.os == 'macos-latest'
-        run: |
-          mkdir -p ./app/build
-          cat > ./app/build/entitlements.mac.plist << EOL
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-            <dict>
-              <key>com.apple.security.cs.allow-jit</key>
-              <true/>
-              <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-              <true/>
-              <key>com.apple.security.cs.disable-library-validation</key>
-              <true/>
-              <key>com.apple.security.files.user-selected.read-write</key>
-              <true/>
-              <key>com.apple.security.automation.apple-events</key>
-              <true/>
-            </dict>
-          </plist>
-          EOL
-      
       - name: Install dependencies
         working-directory: ./app
         run: npm ci
       
-      - name: Build Electron app for Windows/Linux
-        if: matrix.os != 'macos-latest'
+      - name: Build for Windows
+        if: matrix.os == 'windows-latest'
         working-directory: ./app
-        run: npm run electron:build
+        run: npm run electron:build:win
       
-      - name: Build Electron app for macOS (unsigned)
+      - name: Build for macOS
         if: matrix.os == 'macos-latest'
         working-directory: ./app
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: npm run electron:build
+        run: npm run electron:build:mac
+      
+      - name: Build for Linux
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: ./app
+        run: npm run electron:build:linux
       
       - name: Upload Windows artifacts
         if: matrix.os == 'windows-latest'
