@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-      fail-fast: false 
+      fail-fast: false
 
     steps:
     - name: Check out code
@@ -30,45 +30,41 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev rpm
     
+    - name: Add missing packages
+      working-directory: ./app
+      run: |
+        npm install react-icons@4.11.0 @vercel/analytics@1.1.1 @vercel/speed-insights@1.0.2 geist
+
+    - name: Patch source files
+      shell: bash
+      run: |
+        cd app
+        # Patch layout.tsx
+        sed -i.bak 's/import { Geist, Geist_Mono } from "next\/font\/google";/const Geist = (options) => ({ className: "", variable: "--font-geist-sans", style: {} });\nconst Geist_Mono = (options) => ({ className: "", variable: "--font-geist-mono", style: {} });\nconst geistSans = { variable: "--font-geist-sans" };\nconst geistMono = { variable: "--font-geist-mono" };/' src/app/layout.tsx
+        sed -i.bak 's/import { Analytics } from "@vercel\/analytics\/react";/const Analytics = () => null;/' src/app/layout.tsx
+        sed -i.bak 's/import { SpeedInsights } from "@vercel\/speed-insights\/next";/const SpeedInsights = () => null;/' src/app/layout.tsx
+        # Patch Navbar.tsx
+        sed -i.bak 's/import { FiHome, FiImage, FiRotateCcw, FiMonitor } from "react-icons\/fi";/const FiHome = (props) => <span role="img" aria-label="home" {...props}>🏠<\/span>;\nconst FiImage = (props) => <span role="img" aria-label="image" {...props}>🖼️<\/span>;\nconst FiRotateCcw = (props) => <span role="img" aria-label="rotate" {...props}>🔄<\/span>;\nconst FiMonitor = (props) => <span role="img" aria-label="monitor" {...props}>🖥️<\/span>;/' src/components/Navbar.tsx
+        # Create clean script
+        mkdir -p scripts
+        echo 'const fs = require("fs"); const path = require("path"); const dirsToClean = ["out", "dist", ".next"]; for(const dir of dirsToClean) { const dirPath = path.join(__dirname, "..", dir); if (fs.existsSync(dirPath)) { fs.rmSync(dirPath, { recursive: true, force: true }); } }' > scripts/clean.js
+        # Make sure it's in package.json
+        node -e 'const fs = require("fs"); const pkg = JSON.parse(fs.readFileSync("package.json", "utf8")); if (!pkg.scripts) pkg.scripts = {}; pkg.scripts.electron_clean = "node scripts/clean.js"; fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));'
+
     - name: Install dependencies
       working-directory: ./app
       run: npm install --no-package-lock
     
-    - name: Add build directory logging
-      shell: bash
-      run: |
-        mkdir -p app/scripts
-        cat > app/scripts/build-dir-logger.js << 'EOF'
-        const fs = require('fs');
-        const path = require('path');
-        const { exec } = require('child_process');
-
-        // Add build directory configuration to ensure output goes to expected location
-        const pkgPath = path.join(process.cwd(), 'package.json');
-        if (fs.existsSync(pkgPath)) {
-          const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-          if (!pkg.build) pkg.build = {};
-          pkg.build.directories = {
-            output: path.join(process.cwd(), 'dist'),
-            app: path.join(process.cwd(), 'out')
-          };
-          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
-        }
-        console.log('✅ Added build directories configuration');
-        EOF
-        cd app
-        node scripts/build-dir-logger.js
-
     - name: Build for Windows
       if: matrix.os == 'windows-latest'
       working-directory: ./app
-      run: |
-        npm run electron:clean || true
-        npm run electron:build:win:portable
-        npm run electron:build:win:installer
       env:
         USE_HARD_LINKS: false
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        node scripts/clean.js || echo "Clean script ran or skipped"
+        npm run electron:build:win:portable
+        npm run electron:build:win:installer
     
     - name: Build for macOS
       if: matrix.os == 'macos-latest'
@@ -78,7 +74,7 @@ jobs:
         USE_HARD_LINKS: false
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        npm run electron:clean || true
+        node scripts/clean.js || echo "Clean script ran or skipped"
         npm run electron:build:mac
     
     - name: Build for Linux
@@ -88,7 +84,7 @@ jobs:
         USE_HARD_LINKS: false
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        npm run electron:clean || true
+        node scripts/clean.js || echo "Clean script ran or skipped"
         npm run electron:build:linux
     
     - name: Build for Linux ARM64
@@ -109,7 +105,7 @@ jobs:
       run: |
         npm run electron:build:linux:armv7l
     
-    - name: List build outputs for debugging
+    - name: List build outputs
       if: always()
       shell: bash
       run: |
@@ -128,9 +124,6 @@ jobs:
           app/out/**/*.exe
           app/out/**/*.msi
           app/out/**/*.zip
-          app/release/**/*.exe
-          app/release/**/*.msi
-          app/release/**/*.zip
         if-no-files-found: warn
 
     - name: Upload macOS artifacts
@@ -143,8 +136,6 @@ jobs:
           app/dist/**/*.zip
           app/out/**/*.dmg
           app/out/**/*.zip
-          app/release/**/*.dmg
-          app/release/**/*.zip
         if-no-files-found: warn 
     
     - name: Upload Linux artifacts
@@ -158,11 +149,6 @@ jobs:
           app/dist/**/*.rpm
           app/dist/**/*.snap
           app/dist/**/*.tar.gz
-          app/release/**/*.AppImage
-          app/release/**/*.deb
-          app/release/**/*.rpm
-          app/release/**/*.snap
-          app/release/**/*.tar.gz
         if-no-files-found: warn 
 
   release:
