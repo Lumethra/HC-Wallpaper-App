@@ -1,140 +1,148 @@
-name: Build Electron App
+name: Build and Release
 
 on:
-  workflow_dispatch:
   push:
-    branches: [main]
-    paths:
-      - 'app/**'
-      - '.github/workflows/build.yml'
+    branches: [ main ]
   pull_request:
-    branches: [main]
-    paths:
-      - 'app/**'
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: app/package-lock.json
-      
-      - name: Install Linux dependencies
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libglib2.0-dev rpm
-      
-      - name: Install dependencies
-        working-directory: ./app
-        run: npm install --no-package-lock
-      
-      - name: Install Next.js globally
-        run: npm install -g next
-      
-      - name: Build for Windows
-        if: matrix.os == 'windows-latest'
-        working-directory: ./app
-        run: npm run electron:build:win
-      
-      - name: Build for macOS
-        if: matrix.os == 'macos-latest'
-        working-directory: ./app
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: |
-          npm install -g next
-          npm run electron:build:mac
-      
-      - name: Build for Linux
-        if: matrix.os == 'ubuntu-latest'
-        working-directory: ./app
-        run: npm run electron:build:linux
-      
-      - name: Upload Windows artifacts
-        if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-build
-          path: |
-            app/dist/*.exe
-            app/dist/*.msi
-          if-no-files-found: warn
-      
-      - name: Upload macOS artifacts
-        if: matrix.os == 'macos-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-build
-          path: app/dist/*.dmg
-          if-no-files-found: warn
-      
-      - name: Upload Linux artifacts
-        if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-build
-          path: |
-            app/dist/*.AppImage
-            app/dist/*.deb
-            app/dist/*.rpm
-          if-no-files-found: warn
-  
-  linux-arm-build:
+    - name: Check out code
+      uses: actions/checkout@v3
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install Linux dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev rpm
+    
+    - name: Update package.json scripts
+      shell: bash
+      run: |
+        cd app
+        if [ -f package.json ]; then
+          node -e '
+            const fs = require("fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            if (!pkg.scripts) pkg.scripts = {};
+            pkg.scripts.preinstall = "node scripts/ci-preinstall.js";
+            pkg.scripts.prebuild = "node scripts/ci-preinstall.js";
+            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2));
+            console.log("Updated package.json scripts");
+          '
+        fi
+
+    - name: Install dependencies
+      working-directory: ./app
+      run: npm install --no-package-lock
+    
+    - name: Clean if needed
+      working-directory: ./app
+      run: npm run electron:clean || true
+    
+    - name: Build for Windows
+      if: matrix.os == 'windows-latest'
+      working-directory: ./app
+      run: |
+        npm run electron:build:win:portable
+        npm run electron:build:win:installer
+    
+    - name: Build for macOS
+      if: matrix.os == 'macos-latest'
+      working-directory: ./app
+      env:
+        CSC_IDENTITY_AUTO_DISCOVERY: false
+      run: npm run electron:build:mac
+    
+    - name: Build for Linux
+      if: matrix.os == 'ubuntu-latest'
+      working-directory: ./app
+      run: npm run electron:build:linux
+    
+    - name: Build for Linux ARM64
+      if: matrix.os == 'ubuntu-latest'
+      working-directory: ./app
+      run: npm run electron:build:linux:arm64
+    
+    - name: Build for Linux ARMv7l
+      if: matrix.os == 'ubuntu-latest'
+      working-directory: ./app
+      run: npm run electron:build:linux:armv7l
+    
+    - name: Upload Windows artifacts
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-builds
+        path: |
+          app/dist/*.exe
+          app/dist/*.msi
+          app/dist/*.zip
+        if-no-files-found: error
+    
+    - name: Upload macOS artifacts
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: macos-builds
+        path: |
+          app/dist/*.dmg
+          app/dist/*.zip
+        if-no-files-found: error
+    
+    - name: Upload Linux artifacts
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-builds
+        path: |
+          app/dist/*.AppImage
+          app/dist/*.deb
+          app/dist/*.rpm
+          app/dist/*.snap
+          app/dist/*.tar.gz
+        if-no-files-found: error
+
+  release:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: app/package-lock.json
+          path: artifacts
       
-      - name: Install dependencies
-        working-directory: ./app
-        run: npm install --no-package-lock
-      
-      - name: Build for Linux ARM64
-        working-directory: ./app
-        run: npm run electron:build:linux:arm64
-      
-      - name: Upload Linux ARM64 artifacts
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
-          name: linux-arm64-build
-          path: |
-            app/dist/*arm64.AppImage
-            app/dist/*arm64.deb
-            app/dist/*arm64.rpm
-            app/dist/*arm64.snap
-          if-no-files-found: warn
-
-      - name: Build for Linux ARMv7l
-        working-directory: ./app
-        run: npm run electron:build:linux:armv7l
-
-      - name: Upload Linux ARMv7l artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-armv7l-build
-          path: |
-            app/dist/*armv7l.AppImage
-            app/dist/*armv7l.deb
-            app/dist/*armv7l.rpm
-            app/dist/*armv7l.snap
-          if-no-files-found: warn
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*.exe
+            artifacts/**/*.msi
+            artifacts/**/*.zip
+            artifacts/**/*.dmg
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+            artifacts/**/*.snap
+            artifacts/**/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
