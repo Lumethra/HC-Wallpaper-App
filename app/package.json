@@ -50,6 +50,10 @@
     "tailwindcss": "^4",
     "to-ico": "^1.0.1",
     "typescript": "^5.8.3",
-    "wait-on": "^8.0.3"
+    "wait-on": "^8.0.3",
+    "@vercel/analytics": "^1.1.1",
+    "@vercel/speed-insights": "^1.0.2",
+    "react-icons": "^4.11.0",
+    "geist": "^1.0.0"
   }
 }

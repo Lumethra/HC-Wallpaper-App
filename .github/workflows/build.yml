@@ -174,8 +174,8 @@ jobs:
         # Install required global packages
         npm install -g electron-builder
         
-        # Build Linux excluding pacman target
-        electron-builder --config electron-builder.json --linux AppImage,deb,rpm,snap,tar.gz
+        # Build Linux with ALL formats (simplest approach)
+        electron-builder --config electron-builder.json --linux
 
     - name: Build for Linux ARM64
       if: matrix.os == 'ubuntu-latest'

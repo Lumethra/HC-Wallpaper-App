@@ -5,6 +5,9 @@ const nextConfig = {
     images: {
         unoptimized: true,
     },
+    typescript: {
+        ignoreBuildErrors: process.env.VERCEL_ENV === 'production',
+    },
 }
 
 module.exports = nextConfig

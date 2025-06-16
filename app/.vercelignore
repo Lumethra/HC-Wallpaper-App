@@ -1,0 +1,5 @@
+electron/
+scripts/
+node_modules/
+out/
+dist/
