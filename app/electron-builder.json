@@ -12,15 +12,33 @@
         "package.json"
     ],
     "win": {
-        "target": "portable",
-        "artifactName": "${productName}-Portable-${version}.${ext}",
+        "target": [
+            "portable",
+            "nsis"
+        ],
+        "artifactName": "${productName}-${version}.${ext}",
         "icon": "public/icons/formatted-icons/Abhay-App-Icon.ico"
+    },
+    "nsis": {
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "shortcutName": "HC Wallpaper App"
+    },
+    "portable": {
+        "artifactName": "${productName}-Portable-${version}.${ext}"
     },
     "mac": {
         "target": [
             "dmg"
         ],
-        "icon": "public/icons/formatted-icons/Abhay-App-Icon.icns"
+        "category": "public.app-category.utilities",
+        "icon": "public/icons/formatted-icons/Abhay-App-Icon.icns",
+        "hardenedRuntime": true,
+        "gatekeeperAssess": false,
+        "entitlements": "entitlements.plist",
+        "entitlementsInherit": "entitlements.plist"
     },
     "linux": {
         "target": [

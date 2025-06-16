@@ -3,13 +3,13 @@ const path = require('path');
 const { execSync } = require('child_process');
 const os = require('os');
 
-const platform = process.platform;
+// Use environment variable if set, otherwise use current platform
+const platform = process.env.PLATFORM === 'current' ? process.platform : process.env.PLATFORM || process.platform;
 console.log(`Building for platform: ${platform}`);
 
-// Convert icons properly by executing the script directly
+// Convert icons properly
 console.log('Converting application icons...');
 try {
-    // Execute the conversion script directly instead of requiring it
     execSync('node scripts/convert-icons.js', {
         stdio: 'inherit',
         cwd: path.join(__dirname, '..')
@@ -17,11 +17,9 @@ try {
     console.log('✓ Application icons converted successfully');
 } catch (err) {
     console.error('Error converting application icons:', err);
-    // Continue with the build even if icon conversion fails
 }
 
 console.log('Generating remote wallpaper catalog...');
-
 try {
     require('./generate-remote-wallpapers');
     console.log('✓ Remote wallpaper catalog generated');
@@ -29,6 +27,7 @@ try {
     console.error('Error generating remote wallpaper catalog:', err);
 }
 
+// Copy files to output directory
 console.log('Copying index.js to out directory...');
 try {
     fs.copyFileSync(
@@ -42,70 +41,145 @@ try {
 
 console.log('Copying electron directory to out directory...');
 try {
+    const electronDir = path.join(__dirname, '..', 'electron');
     const outElectronDir = path.join(__dirname, '..', 'out', 'electron');
+
     if (!fs.existsSync(outElectronDir)) {
         fs.mkdirSync(outElectronDir, { recursive: true });
     }
 
-    const electronDir = path.join(__dirname, '..', 'electron');
-    const electronFiles = fs.readdirSync(electronDir);
+    fs.readdirSync(electronDir).forEach(file => {
+        const src = path.join(electronDir, file);
+        const dest = path.join(outElectronDir, file);
 
-    for (const file of electronFiles) {
-        const srcPath = path.join(electronDir, file);
-        const destPath = path.join(outElectronDir, file);
-
-        if (fs.statSync(srcPath).isDirectory()) continue;
-
-        fs.copyFileSync(srcPath, destPath);
-        console.log(`✓ Copied electron/${file}`);
-    }
+        if (fs.statSync(src).isFile()) {
+            fs.copyFileSync(src, dest);
+            console.log(`✓ Copied electron/${file}`);
+        }
+    });
 
     console.log('✓ Copied electron directory');
-
-    const fallbackPath = path.join(outElectronDir, 'fallback.html');
-    fs.writeFileSync(fallbackPath, `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>HC Wallpaper App</title>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding-top: 50px; }
-                h1 { color: #ec3750; }
-            </style>
-        </head>
-        <body>
-            <h1>HC Wallpaper App</h1>
-            <p>There was an error loading the application.</p>
-            <p>Please check the logs for more information.</p>
-        </body>
-        </html>
-    `);
-
-    console.log('✓ Created fallback HTML');
-
-    copyPlatformSpecificFiles(outElectronDir);
 } catch (err) {
     console.error('Error copying electron directory:', err);
 }
 
+// Create fallback HTML
+console.log('Creating fallback HTML...');
+try {
+    const fallbackPath = path.join(__dirname, '..', 'out', 'fallback.html');
+    fs.writeFileSync(fallbackPath, `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Loading HC Wallpaper App</title>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+                    background-color: #f5f5f5;
+                    color: #333;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                    padding: 20px;
+                    text-align: center;
+                }
+                h1 {
+                    margin-bottom: 10px;
+                }
+                p {
+                    margin: 5px 0;
+                }
+                .spinner {
+                    border: 4px solid rgba(0, 0, 0, 0.1);
+                    border-radius: 50%;
+                    border-top: 4px solid #333;
+                    width: 40px;
+                    height: 40px;
+                    animation: spin 1s linear infinite;
+                    margin: 20px 0;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                @media (prefers-color-scheme: dark) {
+                    body {
+                        background-color: #1a1a1a;
+                        color: #f5f5f5;
+                    }
+                    .spinner {
+                        border-color: rgba(255, 255, 255, 0.1);
+                        border-top-color: #f5f5f5;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <h1>HC Wallpaper App</h1>
+            <p>Loading application...</p>
+            <div class="spinner"></div>
+            <p>If the application doesn't load within a few moments,<br>please restart the application.</p>
+        </body>
+        </html>
+    `);
+    console.log('✓ Created fallback HTML');
+} catch (err) {
+    console.error('Error creating fallback HTML:', err);
+}
+
+// Copy platform-specific files
+const outDir = path.join(__dirname, '..', 'out');
+copyPlatformSpecificFiles(outDir);
+
+// Fix HTML paths for Electron
 console.log('Fixing HTML paths for Electron...');
 try {
-    const indexPath = path.join(__dirname, '..', 'out', 'index.html');
+    const htmlFiles = [
+        path.join(outDir, 'index.html'),
+        path.join(outDir, '404.html'),
+    ];
 
-    if (fs.existsSync(indexPath)) {
-        let html = fs.readFileSync(indexPath, 'utf8');
-        html = html.replace(/"\/(_next\/static\/|images\/|favicon\.ico)/g, '"$1');
-        html = html.replace('<head>', '<head>\n    <base href="./">');
-        fs.writeFileSync(indexPath, html);
-        console.log('✓ Fixed HTML paths successfully');
-    } else {
-        console.error(`Index file not found at: ${indexPath}`);
-    }
+    htmlFiles.forEach(htmlPath => {
+        if (fs.existsSync(htmlPath)) {
+            let htmlContent = fs.readFileSync(htmlPath, 'utf8');
+
+            // Fix paths
+            htmlContent = htmlContent
+                .replace(/"\/_next\//g, '"./next/')
+                .replace(/"\/_next\//g, '"./next/')
+                .replace(/href="\//g, 'href="./')
+                .replace(/src="\//g, 'src="./');
+
+            fs.writeFileSync(htmlPath, htmlContent);
+        }
+    });
+
+    console.log('✓ Fixed HTML paths successfully');
 } catch (err) {
     console.error('Error fixing HTML paths:', err);
 }
 
+// Update electron-builder config
+updateElectronBuilderConfig();
+
+// Build with Electron
+console.log('Running electron-builder...');
+const buildCommand = getBuildCommand();
+console.log(`Executing: ${buildCommand}`);
+
+try {
+    execSync(buildCommand, { stdio: 'inherit' });
+} catch (err) {
+    console.error('Error running electron-builder:', err);
+    process.exit(1);
+}
+
+// Helper functions
 function copyPlatformSpecificFiles(outDir) {
     console.log(`Preparing platform-specific files for: ${platform}`);
 
@@ -192,32 +266,33 @@ function updateElectronBuilderConfig() {
     }
 }
 
-updateElectronBuilderConfig();
-
 function getBuildCommand() {
     let buildCommand = 'electron-builder --config electron-builder.json';
 
     if (platform === 'win32') {
-        buildCommand += ' --win portable';
+        // Check for build type to allow building just one format
+        if (process.env.WIN_BUILD_TYPE === 'installer') {
+            buildCommand += ' --win nsis';
+        } else if (process.env.WIN_BUILD_TYPE === 'portable') {
+            buildCommand += ' --win portable';
+        } else {
+            // Build both by default
+            buildCommand += ' --win';
+        }
     } else if (platform === 'darwin') {
         buildCommand += ' --mac dmg';
+        // Check if running on Apple Silicon
+        if (os.arch() === 'arm64') {
+            buildCommand += ' --arm64';
+        }
     } else if (platform === 'linux') {
-        buildCommand += ' --linux AppImage';
+        buildCommand += ' --linux';
+
+        const arch = process.env.ARCH || os.arch();
+        if (arch === 'arm64' || arch === 'armv7l') {
+            buildCommand += ` --${arch}`;
+        }
     }
 
     return buildCommand;
-}
-
-console.log('Running electron-builder...');
-
-try {
-    const buildCommand = getBuildCommand();
-    console.log(`Executing: ${buildCommand}`);
-    execSync(buildCommand, {
-        stdio: 'inherit'
-    });
-    console.log('✓ Electron build completed');
-} catch (err) {
-    console.error('Error running electron-builder:', err);
-    process.exit(1);
 }
