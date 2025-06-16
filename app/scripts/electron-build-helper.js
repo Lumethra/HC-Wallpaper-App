@@ -290,13 +290,8 @@ function getBuildCommand() {
             buildCommand += ' --arm64';
         }
     } else if (platform === 'linux') {
-        // Check if specific Linux targets are requested
-        if (process.env.LINUX_TARGET) {
-            const targets = process.env.LINUX_TARGET.split(' ');
-            buildCommand += ' --linux ' + targets.join(',');
-        } else {
-            buildCommand += ' --linux';
-        }
+        // Specify formats to build, excluding pacman
+        buildCommand += ' --linux AppImage,deb,rpm,snap,tar.gz';
 
         const arch = process.env.ARCH || os.arch();
         if (arch === 'arm64' || arch === 'armv7l') {

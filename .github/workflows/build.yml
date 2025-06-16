@@ -167,12 +167,15 @@ jobs:
     - name: Build for Linux
       if: matrix.os == 'ubuntu-latest'
       working-directory: ./app
+      env:
+        USE_HARD_LINKS: false
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Install required global packages
         npm install -g electron-builder
         
-        # Build with all formats - the correct way
-        electron-builder --config electron-builder.json --linux
+        # Build Linux excluding pacman target
+        electron-builder --config electron-builder.json --linux AppImage,deb,rpm,snap,tar.gz
 
     - name: Build for Linux ARM64
       if: matrix.os == 'ubuntu-latest'
