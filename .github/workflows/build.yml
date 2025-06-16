@@ -39,7 +39,7 @@ jobs:
       
       - name: Install dependencies
         working-directory: ./app
-        run: npm ci
+        run: npm install --no-package-lock
       
       - name: Install Next.js globally
         run: npm install -g next
@@ -54,7 +54,9 @@ jobs:
         working-directory: ./app
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: npm run electron:build:mac
+        run: |
+          npm install -g next
+          npm run electron:build:mac
       
       - name: Build for Linux
         if: matrix.os == 'ubuntu-latest'
@@ -105,7 +107,7 @@ jobs:
       
       - name: Install dependencies
         working-directory: ./app
-        run: npm ci
+        run: npm install --no-package-lock
       
       - name: Build for Linux ARM64
         working-directory: ./app
