@@ -488,93 +488,40 @@ async function safeSetWallpaper(filePath) {
 
 async function tryOtherWallpaperMethods(filePath) {
     try {
-        if (process.platform === 'linux') {
-            // Try various Linux desktop environment methods
-            const { exec } = require('child_process');
-            const util = require('util');
-            const execPromise = util.promisify(exec);
+        if (process.platform === 'darwin') {
+            console.log('Using macOS wallpaper method with path:', filePath);
 
-            // Detect desktop environment
-            let desktopEnv = process.env.XDG_CURRENT_DESKTOP || '';
-            desktopEnv = desktopEnv.toLowerCase();
-
-            console.log(`Detected Linux desktop environment: ${desktopEnv}`);
-
-            // GNOME, Unity, Cinnamon, Pantheon, Budgie
-            if (desktopEnv.includes('gnome') ||
-                desktopEnv.includes('unity') ||
-                desktopEnv.includes('cinnamon') ||
-                desktopEnv.includes('pantheon') ||
-                desktopEnv.includes('budgie')) {
-                try {
-                    await execPromise(`gsettings set org.gnome.desktop.background picture-uri "file://${filePath}"`);
-                    await execPromise(`gsettings set org.gnome.desktop.background picture-uri-dark "file://${filePath}"`);
-                    return true;
-                } catch (gnomeErr) {
-                    console.error('GNOME wallpaper error:', gnomeErr);
-                }
-            }
-
-            // KDE Plasma
-            if (desktopEnv.includes('kde')) {
-                try {
-                    const script = `
-                    var allDesktops = desktops();
-                    for (var i=0; i<allDesktops.length; i++) {
-                        d = allDesktops[i];
-                        d.wallpaperPlugin = "org.kde.image";
-                        d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");
-                        d.writeConfig("Image", "file://${filePath}");
-                    }`;
-                    await execPromise(`qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '${script}'`);
-                    return true;
-                } catch (kdeErr) {
-                    console.error('KDE wallpaper error:', kdeErr);
-                }
-            }
-
-            // XFCE
-            if (desktopEnv.includes('xfce')) {
-                try {
-                    const result = await execPromise('xfconf-query -c xfce4-desktop -l | grep last-image');
-                    const properties = result.stdout.trim().split('\n');
-
-                    for (const property of properties) {
-                        await execPromise(`xfconf-query -c xfce4-desktop -p ${property} -s "${filePath}"`);
-                    }
-                    return true;
-                } catch (xfceErr) {
-                    console.error('XFCE wallpaper error:', xfceErr);
-                }
-            }
-
-            // MATE
-            if (desktopEnv.includes('mate')) {
-                try {
-                    await execPromise(`gsettings set org.mate.background picture-filename "${filePath}"`);
-                    return true;
-                } catch (mateErr) {
-                    console.error('MATE wallpaper error:', mateErr);
-                }
-            }
-
-            // LXDE
-            if (desktopEnv.includes('lxde')) {
-                try {
-                    await execPromise(`pcmanfm --set-wallpaper="${filePath}"`);
-                    return true;
-                } catch (lxdeErr) {
-                    console.error('LXDE wallpaper error:', lxdeErr);
-                }
-            }
-
-            // Fallback to feh (commonly used in lightweight window managers)
             try {
-                await execPromise(`feh --bg-fill "${filePath}"`);
-                return true;
-            } catch (fehErr) {
-                console.error('Feh wallpaper error:', fehErr);
+                if (!fs.existsSync(filePath)) {
+                    throw new Error(`File not found: ${filePath}`);
+                }
+
+                const wallpaperModule = require('wallpaper');
+                await wallpaperModule.set(filePath);
+                console.log('Successfully set wallpaper on macOS');
+            } catch (err) {
+                console.error('Error in macOS wallpaper method:', err.message);
+                const { execFile } = require('child_process');
+                return new Promise((resolve, reject) => {
+                    const script = `
+                        tell application "System Events"
+                            tell every desktop
+                                set picture to "${filePath}"
+                            end tell
+                        end tell
+                    `;
+                    execFile('osascript', ['-e', script], (error) => {
+                        if (error) {
+                            console.error('AppleScript fallback error:', error);
+                            reject(error);
+                        } else {
+                            console.log('Successfully set wallpaper using AppleScript');
+                            resolve(true);
+                        }
+                    });
+                });
             }
+            return true;
         }
 
         if (process.env.WALLPAPER_BINARY && process.platform === 'win32') {
