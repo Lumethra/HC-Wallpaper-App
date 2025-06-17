@@ -101,7 +101,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: macos-x64-builds
-        path: app/dist/*macOS-x64*.dmg
+        path: app/dist/*macOS*.dmg
         if-no-files-found: warn
 
   macos-arm64-build:
@@ -133,7 +133,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: macos-arm64-builds
-        path: app/dist/*macOS-arm64*.dmg
+        path: app/dist/*macOS*.dmg
         if-no-files-found: warn
 
   linux-x64-build:
@@ -166,9 +166,9 @@ jobs:
       with:
         name: linux-x64-builds
         path: |
-          app/dist/*Linux-x64*.AppImage
-          app/dist/*Linux-x64*.deb
-          app/dist/*Linux-x64*.rpm
+          app/dist/*Linux*.AppImage
+          app/dist/*Linux*.deb
+          app/dist/*Linux*.rpm
         if-no-files-found: warn
 
   linux-arm64-build:
@@ -201,9 +201,9 @@ jobs:
       with:
         name: linux-arm64-builds
         path: |
-          app/dist/*Linux-arm64*.AppImage
-          app/dist/*Linux-arm64*.deb
-          app/dist/*Linux-arm64*.rpm
+          app/dist/*Linux*.AppImage
+          app/dist/*Linux*.deb
+          app/dist/*Linux*.rpm
         if-no-files-found: warn
 
   linux-armv7l-build:
@@ -236,7 +236,7 @@ jobs:
       with:
         name: linux-armv7l-builds
         path: |
-          app/dist/*Linux-armv7l*.AppImage
-          app/dist/*Linux-armv7l*.deb
-          app/dist/*Linux-armv7l*.rpm
+          app/dist/*Linux*.AppImage
+          app/dist/*Linux*.deb
+          app/dist/*Linux*.rpm
         if-no-files-found: warn
