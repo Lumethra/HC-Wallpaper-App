@@ -4,32 +4,108 @@ on:
   workflow_dispatch: 
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    
+  prepare:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Get version from package.json
+        id: get-version
+        run: echo "version=$(node -p "require('./app/package.json').version")" >> $GITHUB_OUTPUT
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      date: ${{ steps.date.outputs.date }}
+
+  windows-portable:
+    needs: prepare
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: app/package-lock.json
-      
-      - name: Install Linux dependencies
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm ci
+      - name: Build Windows Portable
+        working-directory: ./app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run electron:build -- --win portable
+      - name: Rename artifact
+        working-directory: ./app/dist
+        shell: powershell
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libglib2.0-dev rpm
-      
+          Get-ChildItem -Filter "*.exe" | Where-Object { $_.Name -notmatch "Setup" } | ForEach-Object {
+            $newName = $_.BaseName + "-portable-win-x64.exe"
+            Rename-Item -Path $_.FullName -NewName $newName
+          }
+      - name: Upload Windows Portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-portable-x64
+          path: app/dist/*portable-win-x64.exe
+          if-no-files-found: error
+
+  windows-installer:
+    needs: prepare
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm ci
+      - name: Build Windows Installer
+        working-directory: ./app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run electron:build -- --win nsis
+      - name: Rename artifact
+        working-directory: ./app/dist
+        shell: powershell
+        run: |
+          Get-ChildItem -Filter "*Setup*.exe" | ForEach-Object {
+            $newName = $_.BaseName + "-win-x64.exe"
+            Rename-Item -Path $_.FullName -NewName $newName
+          }
+      - name: Upload Windows Installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer-x64
+          path: app/dist/*Setup*-win-x64.exe
+          if-no-files-found: error
+
+  macos-x64:
+    needs: prepare
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
       - name: Create macOS entitlements file
-        if: matrix.os == 'macos-latest'
         run: |
           mkdir -p ./app/build
           cat > ./app/build/entitlements.mac.plist << EOL
@@ -50,46 +126,210 @@ jobs:
             </dict>
           </plist>
           EOL
-      
       - name: Install dependencies
         working-directory: ./app
         run: npm ci
-      
-      - name: Build Electron app for Windows/Linux
-        if: matrix.os != 'macos-latest'
-        working-directory: ./app
-        run: npm run electron:build
-      
-      - name: Build Electron app for macOS (unsigned)
-        if: matrix.os == 'macos-latest'
+      - name: Build macOS x64 DMG
         working-directory: ./app
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: npm run electron:build
-      
-      - name: Upload Windows artifacts
-        if: matrix.os == 'windows-latest'
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run electron:build -- --mac dmg --x64 --c.mac.identity=null
+      - name: Rename artifact
+        working-directory: ./app/dist
+        run: |
+          find . -name "*.dmg" -exec sh -c 'mv "$0" "${0%.dmg}-mac-x64.dmg"' {} \;
+      - name: Upload macOS x64 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-build
-          path: app/dist/*.exe
-          if-no-files-found: warn
-      
-      - name: Upload macOS artifacts
-        if: matrix.os == 'macos-latest'
+          name: macos-x64-build
+          path: app/dist/*-mac-x64.dmg
+          if-no-files-found: error
+
+  macos-arm64:
+    needs: prepare
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+      - name: Create macOS entitlements file
+        run: |
+          mkdir -p ./app/build
+          cat > ./app/build/entitlements.mac.plist << EOL
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+            <dict>
+              <key>com.apple.security.cs.allow-jit</key>
+              <true/>
+              <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+              <true/>
+              <key>com.apple.security.cs.disable-library-validation</key>
+              <true/>
+              <key>com.apple.security.files.user-selected.read-write</key>
+              <true/>
+              <key>com.apple.security.automation.apple-events</key>
+              <true/>
+            </dict>
+          </plist>
+          EOL
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm ci
+      - name: Build macOS arm64 DMG
+        working-directory: ./app
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run electron:build -- --mac dmg --arm64 --c.mac.identity=null
+      - name: Rename artifact
+        working-directory: ./app/dist
+        run: |
+          find . -name "*.dmg" -exec sh -c 'mv "$0" "${0%.dmg}-mac-arm64.dmg"' {} \;
+      - name: Upload macOS arm64 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: macos-build
-          path: app/dist/*.dmg
-          if-no-files-found: warn
-      
-      - name: Upload Linux artifacts
-        if: matrix.os == 'ubuntu-latest'
+          name: macos-arm64-build
+          path: app/dist/*-mac-arm64.dmg
+          if-no-files-found: error
+
+  linux-x64:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libglib2.0-dev rpm
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm ci
+      - name: Build Linux x64 AppImage
+        working-directory: ./app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run electron:build -- --linux AppImage --x64
+      - name: Rename artifact
+        working-directory: ./app/dist
+        run: |
+          find . -name "*.AppImage" -exec sh -c 'mv "$0" "${0%.AppImage}-linux-x64.AppImage"' {} \;
+      - name: Upload Linux x64 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-build
-          path: |
-            app/dist/*.AppImage
-            app/dist/*.deb
-            app/dist/*.rpm
-          if-no-files-found: warn
+          name: linux-x64-build
+          path: app/dist/*-linux-x64.AppImage
+          if-no-files-found: error
+
+  linux-arm64:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libglib2.0-dev rpm
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm ci
+      - name: Build Linux ARM64 AppImage
+        working-directory: ./app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run electron:build -- --linux AppImage --arm64
+      - name: Rename artifact
+        working-directory: ./app/dist
+        run: |
+          find . -name "*.AppImage" -exec sh -c 'mv "$0" "${0%.AppImage}-linux-arm64.AppImage"' {} \;
+      - name: Upload Linux ARM64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-build
+          path: app/dist/*-linux-arm64.AppImage
+          if-no-files-found: error
+
+  linux-armv7l:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libglib2.0-dev rpm
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm ci
+      - name: Build Linux ARMv7l AppImage
+        working-directory: ./app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run electron:build -- --linux AppImage --armv7l
+      - name: Rename artifact
+        working-directory: ./app/dist
+        run: |
+          find . -name "*.AppImage" -exec sh -c 'mv "$0" "${0%.AppImage}-linux-armv7l.AppImage"' {} \;
+      - name: Upload Linux ARMv7l artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-armv7l-build
+          path: app/dist/*-linux-armv7l.AppImage
+          if-no-files-found: error
+
+  release:
+    needs: [prepare, windows-portable, windows-installer, macos-x64, macos-arm64, linux-x64, linux-arm64, linux-armv7l]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: List artifacts
+        run: |
+          find artifacts -type f -name "*.*" | sort
+      - name: Create release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: v${{ needs.prepare.outputs.version }} (${{ needs.prepare.outputs.date }})
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          files: |
+            artifacts/windows-portable-x64/*.exe
+            artifacts/windows-installer-x64/*.exe
+            artifacts/macos-x64-build/*.dmg
+            artifacts/macos-arm64-build/*.dmg
+            artifacts/linux-x64-build/*.AppImage
+            artifacts/linux-arm64-build/*.AppImage
+            artifacts/linux-armv7l-build/*.AppImage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
