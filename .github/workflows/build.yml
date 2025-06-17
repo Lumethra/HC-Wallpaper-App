@@ -85,7 +85,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: macos-builds
-        path: app/dist/*.dmg
+        path: |
+          app/dist/*macOS*.dmg
+          app/dist/*macOS*arm64*.dmg
         if-no-files-found: warn
         
     - name: List Linux artifacts
