@@ -289,12 +289,29 @@ function getBuildCommand() {
         buildCommand += ' --linux';
 
         // Handle platform architecture
-        if (process.env.ARCH === 'arm64') {
+        const arch = process.env.ARCH || os.arch();
+        if (arch === 'arm64') {
             buildCommand += ' --arm64';
-        } else if (process.env.ARCH === 'armv7l') {
+        } else if (arch === 'armv7l') {
             buildCommand += ' --armv7l';
         }
     }
 
+    // Always add --publish=never to avoid accidental publishing
+    buildCommand += ' --publish=never';
+
     return buildCommand;
+}
+
+// Final output
+console.log('Build complete! Output directory contents:');
+try {
+    const distDir = path.join(__dirname, '..', 'dist');
+    const files = fs.readdirSync(distDir);
+    console.log(`Found ${files.length} files in dist directory:`);
+    files.forEach(file => {
+        console.log(`- ${file}`);
+    });
+} catch (err) {
+    console.error('Error listing dist directory:', err);
 }
