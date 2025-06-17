@@ -95,7 +95,7 @@ jobs:
     - name: List artifacts
       run: |
         cd app
-        ls -la dist/
+        ls -l dist
     
     - name: Upload macOS x64 artifacts
       uses: actions/upload-artifact@v4
@@ -127,7 +127,7 @@ jobs:
     - name: List artifacts
       run: |
         cd app
-        ls -la dist/
+        ls -l dist
     
     - name: Upload macOS ARM64 artifacts
       uses: actions/upload-artifact@v4
@@ -159,7 +159,7 @@ jobs:
     - name: List artifacts
       run: |
         cd app
-        ls -la dist/
+        ls -l dist
     
     - name: Upload Linux x64 artifacts
       uses: actions/upload-artifact@v4
@@ -194,7 +194,7 @@ jobs:
     - name: List artifacts
       run: |
         cd app
-        ls -la dist/
+        ls -l dist
     
     - name: Upload Linux ARM64 artifacts
       uses: actions/upload-artifact@v4
@@ -229,7 +229,7 @@ jobs:
     - name: List artifacts
       run: |
         cd app
-        ls -la dist/
+        ls -l dist
     
     - name: Upload Linux ARMv7l artifacts
       uses: actions/upload-artifact@v4
