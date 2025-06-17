@@ -49,13 +49,7 @@
         ],
         "category": "Utility",
         "icon": "public/icons/formatted-icons/Abhay-App-Icon.png",
-        "artifactName": "${productName}_Linux-x64_${version}.${ext}"
-    },
-    "linux-arm64": {
-        "artifactName": "${productName}_Linux-ARM64_${version}.${ext}"
-    },
-    "linux-armv7l": {
-        "artifactName": "${productName}_Linux-ARMv7l_${version}.${ext}"
+        "artifactName": "${productName}_Linux-${arch}_${version}.${ext}"
     },
     "extraResources": [
         {

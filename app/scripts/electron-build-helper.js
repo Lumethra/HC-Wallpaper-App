@@ -294,5 +294,7 @@ function getBuildCommand() {
         }
     }
 
+    buildCommand += ' --publish=never';
+
     return buildCommand;
 }
