@@ -8,13 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-      fail-fast: false
-
+  windows-build:
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
     
@@ -29,43 +24,11 @@ jobs:
         npm install
     
     - name: Build Windows app (installer & portable)
-      if: matrix.os == 'windows-latest'
       run: |
         cd app
         npm run electron:build:win
-
-    - name: Build macOS x64 app
-      if: matrix.os == 'macos-latest'
-      run: |
-        cd app
-        npm run electron:build:mac
-
-    - name: Build macOS ARM64 app
-      if: matrix.os == 'macos-latest'
-      run: |
-        cd app
-        npm run electron:build:mac:arm64
-
-    - name: Build Linux x64 app
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        cd app
-        npm run electron:build:linux
-
-    - name: Build Linux ARM64 app
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        cd app
-        npm run electron:build:linux:arm64
-
-    - name: Build Linux ARMv7l app
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        cd app
-        npm run electron:build:linux:armv7l
     
     - name: Upload Windows artifacts
-      if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v4
       with:
         name: windows-builds
@@ -73,37 +36,97 @@ jobs:
           app/dist/*Windows-Portable*.exe
           app/dist/*Windows-Installer*.exe
         if-no-files-found: warn
+
+  macos-x64-build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
         
-    - name: List macOS artifacts
-      if: matrix.os == 'macos-latest'
+    - name: Install dependencies
+      run: |
+        cd app
+        npm install
+    
+    - name: Build macOS x64 app
+      run: |
+        cd app
+        npm run electron:build:mac
+    
+    - name: List artifacts
       run: |
         cd app
         ls -la dist/
-
+    
     - name: Upload macOS x64 artifacts
-      if: matrix.os == 'macos-latest'
       uses: actions/upload-artifact@v4
       with:
         name: macos-x64-builds
         path: app/dist/*macOS-x64*.dmg
         if-no-files-found: warn
 
+  macos-arm64-build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        
+    - name: Install dependencies
+      run: |
+        cd app
+        npm install
+    
+    - name: Build macOS ARM64 app
+      run: |
+        cd app
+        npm run electron:build:mac:arm64
+    
+    - name: List artifacts
+      run: |
+        cd app
+        ls -la dist/
+    
     - name: Upload macOS ARM64 artifacts
-      if: matrix.os == 'macos-latest'
       uses: actions/upload-artifact@v4
       with:
         name: macos-arm64-builds
         path: app/dist/*macOS-arm64*.dmg
         if-no-files-found: warn
+
+  linux-x64-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
         
-    - name: List Linux artifacts
-      if: matrix.os == 'ubuntu-latest'
+    - name: Install dependencies
+      run: |
+        cd app
+        npm install
+    
+    - name: Build Linux x64 app
+      run: |
+        cd app
+        npm run electron:build:linux
+    
+    - name: List artifacts
       run: |
         cd app
         ls -la dist/
-
+    
     - name: Upload Linux x64 artifacts
-      if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v4
       with:
         name: linux-x64-builds
@@ -113,8 +136,32 @@ jobs:
           app/dist/*Linux-x64*.rpm
         if-no-files-found: warn
 
+  linux-arm64-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        
+    - name: Install dependencies
+      run: |
+        cd app
+        npm install
+    
+    - name: Build Linux ARM64 app
+      run: |
+        cd app
+        npm run electron:build:linux:arm64
+    
+    - name: List artifacts
+      run: |
+        cd app
+        ls -la dist/
+    
     - name: Upload Linux ARM64 artifacts
-      if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v4
       with:
         name: linux-arm64-builds
@@ -124,8 +171,32 @@ jobs:
           app/dist/*Linux-arm64*.rpm
         if-no-files-found: warn
 
+  linux-armv7l-build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        
+    - name: Install dependencies
+      run: |
+        cd app
+        npm install
+    
+    - name: Build Linux ARMv7l app
+      run: |
+        cd app
+        npm run electron:build:linux:armv7l
+    
+    - name: List artifacts
+      run: |
+        cd app
+        ls -la dist/
+    
     - name: Upload Linux ARMv7l artifacts
-      if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v4
       with:
         name: linux-armv7l-builds
@@ -134,16 +205,3 @@ jobs:
           app/dist/*Linux-armv7l*.deb
           app/dist/*Linux-armv7l*.rpm
         if-no-files-found: warn
-
-    - name: Debug Linux build commands
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        cd app
-        echo "Running x64 build..."
-        npm run electron:build:linux -- --debug
-        echo "Running ARM64 build..."
-        npm run electron:build:linux:arm64 -- --debug
-        echo "Running ARMv7l build..."
-        npm run electron:build:linux:armv7l -- --debug
-        echo "Listing dist directory:"
-        ls -la dist/
