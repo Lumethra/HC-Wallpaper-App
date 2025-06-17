@@ -80,14 +80,20 @@ jobs:
         cd app
         ls -la dist/
 
-    - name: Upload macOS artifacts
+    - name: Upload macOS x64 artifacts
       if: matrix.os == 'macos-latest'
       uses: actions/upload-artifact@v4
       with:
-        name: macos-builds
-        path: |
-          app/dist/*macOS*.dmg
-          app/dist/*macOS*arm64*.dmg
+        name: macos-x64-builds
+        path: app/dist/*macOS*x64*.dmg
+        if-no-files-found: warn
+
+    - name: Upload macOS ARM64 artifacts
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-arm64-builds
+        path: app/dist/*macOS*arm64*.dmg
         if-no-files-found: warn
         
     - name: List Linux artifacts
@@ -96,18 +102,34 @@ jobs:
         cd app
         ls -la dist/
 
-    - name: Upload Linux artifacts
+    - name: Upload Linux x64 artifacts
       if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v4
       with:
-        name: linux-builds
+        name: linux-x64-builds
         path: |
           app/dist/*Linux-x64*.AppImage
           app/dist/*Linux-x64*.deb
           app/dist/*Linux-x64*.rpm
+        if-no-files-found: warn
+
+    - name: Upload Linux ARM64 artifacts
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-arm64-builds
+        path: |
           app/dist/*Linux-arm64*.AppImage
           app/dist/*Linux-arm64*.deb
           app/dist/*Linux-arm64*.rpm
+        if-no-files-found: warn
+
+    - name: Upload Linux ARMv7l artifacts
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-armv7l-builds
+        path: |
           app/dist/*Linux-armv7l*.AppImage
           app/dist/*Linux-armv7l*.deb
           app/dist/*Linux-armv7l*.rpm
