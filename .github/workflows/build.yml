@@ -134,3 +134,16 @@ jobs:
           app/dist/*Linux-armv7l*.deb
           app/dist/*Linux-armv7l*.rpm
         if-no-files-found: warn
+
+    - name: Debug Linux build commands
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd app
+        echo "Running x64 build..."
+        npm run electron:build:linux -- --debug
+        echo "Running ARM64 build..."
+        npm run electron:build:linux:arm64 -- --debug
+        echo "Running ARMv7l build..."
+        npm run electron:build:linux:armv7l -- --debug
+        echo "Listing dist directory:"
+        ls -la dist/

@@ -281,9 +281,12 @@ function getBuildCommand() {
         }
     } else if (platform === 'darwin') {
         buildCommand += ' --mac dmg';
-        // Check if running on Apple Silicon
-        if (process.env.ARCH === 'arm64' || os.arch() === 'arm64') {
+
+        const arch = process.env.ARCH || os.arch();
+        if (arch === 'arm64') {
             buildCommand += ' --arm64';
+        } else if (arch === 'x64' || process.env.ARCH === 'x64') {
+            buildCommand += ' --x64';
         }
     } else if (platform === 'linux') {
         buildCommand += ' --linux';
@@ -294,6 +297,8 @@ function getBuildCommand() {
             buildCommand += ' --arm64';
         } else if (arch === 'armv7l') {
             buildCommand += ' --armv7l';
+        } else if (arch === 'x64' || process.env.ARCH === 'x64') {
+            buildCommand += ' --x64'; // Explicitly add x64 flag
         }
     }
 
