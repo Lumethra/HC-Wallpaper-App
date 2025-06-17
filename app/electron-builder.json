@@ -39,7 +39,7 @@
         "gatekeeperAssess": false,
         "entitlements": "entitlements.plist",
         "entitlementsInherit": "entitlements.plist",
-        "artifactName": "${productName}_macOS_${version}.${ext}"
+        "artifactName": "${productName}-macOS-${arch}-${version}.${ext}"
     },
     "linux": {
         "target": [
