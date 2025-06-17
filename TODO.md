@@ -3,6 +3,7 @@
 - add Linux arm build
 - add Windows Installer build
 - add real MacOS build
+
 - new app bar design
 
 -loading screen
