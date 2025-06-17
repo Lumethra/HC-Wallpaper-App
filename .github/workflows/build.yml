@@ -1,4 +1,4 @@
-name: Build and Release
+name: Build
 
 on:
   push:
@@ -16,93 +16,47 @@ jobs:
       fail-fast: false
 
     steps:
-    - name: Check out code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
     
-    - name: Set up Node.js
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
-    
-    - name: Install Linux dependencies
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev rpm libarchive-tools
-    
-    - name: Setup macOS entitlements
-      if: matrix.os == 'macos-latest'
-      run: |
-        cat > app/entitlements.plist << 'EOL'
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-          <dict>
-            <key>com.apple.security.cs.allow-jit</key>
-            <true/>
-            <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-            <true/>
-            <key>com.apple.security.cs.disable-library-validation</key>
-            <true/>
-            <key>com.apple.security.files.user-selected.read-write</key>
-            <true/>
-            <key>com.apple.security.automation.apple-events</key>
-            <true/>
-          </dict>
-        </plist>
-        EOL
-    
+        node-version: '20.x'
+        
     - name: Install dependencies
-      working-directory: ./app
-      run: npm ci
-    
-    - name: Build Windows Portable
-      if: matrix.os == 'windows-latest'
-      working-directory: ./app
       run: |
-        npm run electron:build:win:portable
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        cd app
+        npm install
     
-    - name: Build Windows Installer
+    - name: Build Windows app (installer & portable)
       if: matrix.os == 'windows-latest'
-      working-directory: ./app
       run: |
-        npm run electron:build:win:installer
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Build for macOS
+        cd app
+        npm run electron:build:win
+
+    - name: Build macOS app
       if: matrix.os == 'macos-latest'
-      working-directory: ./app
       run: |
+        cd app
         npm run electron:build:mac
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Build for Linux x64
+    - name: Build Linux x64 app
       if: matrix.os == 'ubuntu-latest'
-      working-directory: ./app
       run: |
+        cd app
         npm run electron:build:linux
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Build for Linux ARM64
+
+    - name: Build Linux ARM64 app
       if: matrix.os == 'ubuntu-latest'
-      working-directory: ./app
       run: |
+        cd app
         npm run electron:build:linux:arm64
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Build for Linux ARMv7l
+
+    - name: Build Linux ARMv7l app
       if: matrix.os == 'ubuntu-latest'
-      working-directory: ./app
       run: |
+        cd app
         npm run electron:build:linux:armv7l
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Upload Windows artifacts
       if: matrix.os == 'windows-latest'
@@ -113,15 +67,15 @@ jobs:
           app/dist/*Windows-Portable*.exe
           app/dist/*Windows-Installer*.exe
         if-no-files-found: warn
-
+        
     - name: Upload macOS artifacts
       if: matrix.os == 'macos-latest'
       uses: actions/upload-artifact@v4
       with:
         name: macos-builds
-        path: app/dist/*macOS*.dmg
+        path: app/dist/*.dmg
         if-no-files-found: warn
-    
+        
     - name: Upload Linux artifacts
       if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v4
@@ -131,15 +85,10 @@ jobs:
           app/dist/*Linux-x64*.AppImage
           app/dist/*Linux-x64*.deb
           app/dist/*Linux-x64*.rpm
-        if-no-files-found: warn
-    
-    - name: Upload Linux ARM artifacts
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: linux-arm-builds
-        path: |
-          app/dist/*Linux-ARM*.AppImage
-          app/dist/*Linux-ARM*.deb
-          app/dist/*Linux-ARM*.rpm
+          app/dist/*Linux-arm64*.AppImage
+          app/dist/*Linux-arm64*.deb
+          app/dist/*Linux-arm64*.rpm
+          app/dist/*Linux-armv7l*.AppImage
+          app/dist/*Linux-armv7l*.deb
+          app/dist/*Linux-armv7l*.rpm
         if-no-files-found: warn

@@ -282,19 +282,19 @@ function getBuildCommand() {
     } else if (platform === 'darwin') {
         buildCommand += ' --mac dmg';
         // Check if running on Apple Silicon
-        if (os.arch() === 'arm64') {
+        if (process.env.ARCH === 'arm64' || os.arch() === 'arm64') {
             buildCommand += ' --arm64';
         }
     } else if (platform === 'linux') {
         buildCommand += ' --linux';
 
-        const arch = process.env.ARCH || os.arch();
-        if (arch === 'arm64' || arch === 'armv7l') {
-            buildCommand += ` --${arch}`;
+        // Handle platform architecture
+        if (process.env.ARCH === 'arm64') {
+            buildCommand += ' --arm64';
+        } else if (process.env.ARCH === 'armv7l') {
+            buildCommand += ' --armv7l';
         }
     }
-
-    buildCommand += ' --publish=never';
 
     return buildCommand;
 }
