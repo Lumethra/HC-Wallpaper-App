@@ -1,6 +1,6 @@
 {
     "appId": "com.hackclub.wallpaper-app",
-    "productName": "HC-Wallpaper-App",
+    "productName": "HC Wallpaper App",
     "directories": {
         "output": "dist"
     },
@@ -16,6 +16,7 @@
             "portable",
             "nsis"
         ],
+        "artifactName": "${productName}-${version}.${ext}",
         "icon": "public/icons/formatted-icons/Abhay-App-Icon.ico"
     },
     "nsis": {
@@ -23,11 +24,10 @@
         "allowToChangeInstallationDirectory": true,
         "createDesktopShortcut": true,
         "createStartMenuShortcut": true,
-        "shortcutName": "HC Wallpaper App",
-        "artifactName": "${productName}_Windows-Installer_${version}.${ext}"
+        "shortcutName": "HC Wallpaper App"
     },
     "portable": {
-        "artifactName": "${productName}_Windows-Portable_${version}.${ext}"
+        "artifactName": "${productName}-Portable-${version}.${ext}"
     },
     "mac": {
         "target": [
@@ -38,8 +38,7 @@
         "hardenedRuntime": true,
         "gatekeeperAssess": false,
         "entitlements": "entitlements.plist",
-        "entitlementsInherit": "entitlements.plist",
-        "artifactName": "${productName}-macOS-${arch}-${version}.${ext}"
+        "entitlementsInherit": "entitlements.plist"
     },
     "linux": {
         "target": [
@@ -48,8 +47,7 @@
             "rpm"
         ],
         "category": "Utility",
-        "icon": "public/icons/formatted-icons/Abhay-App-Icon.png",
-        "artifactName": "${productName}_Linux-${arch}_${version}.${ext}"
+        "icon": "public/icons/formatted-icons/Abhay-App-Icon.png"
     },
     "extraResources": [
         {

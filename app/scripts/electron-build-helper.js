@@ -281,42 +281,18 @@ function getBuildCommand() {
         }
     } else if (platform === 'darwin') {
         buildCommand += ' --mac dmg';
-
-        const arch = process.env.ARCH || os.arch();
-        if (arch === 'arm64') {
+        // Check if running on Apple Silicon
+        if (os.arch() === 'arm64') {
             buildCommand += ' --arm64';
-        } else if (arch === 'x64' || process.env.ARCH === 'x64') {
-            buildCommand += ' --x64';
         }
     } else if (platform === 'linux') {
         buildCommand += ' --linux';
 
-        // Handle platform architecture
         const arch = process.env.ARCH || os.arch();
-        if (arch === 'arm64') {
-            buildCommand += ' --arm64';
-        } else if (arch === 'armv7l') {
-            buildCommand += ' --armv7l';
-        } else if (arch === 'x64' || process.env.ARCH === 'x64') {
-            buildCommand += ' --x64'; // Explicitly add x64 flag
+        if (arch === 'arm64' || arch === 'armv7l') {
+            buildCommand += ` --${arch}`;
         }
     }
 
-    // Always add --publish=never to avoid accidental publishing
-    buildCommand += ' --publish=never';
-
     return buildCommand;
-}
-
-// Final output
-console.log('Build complete! Output directory contents:');
-try {
-    const distDir = path.join(__dirname, '..', 'dist');
-    const files = fs.readdirSync(distDir);
-    console.log(`Found ${files.length} files in dist directory:`);
-    files.forEach(file => {
-        console.log(`- ${file}`);
-    });
-} catch (err) {
-    console.error('Error listing dist directory:', err);
 }
