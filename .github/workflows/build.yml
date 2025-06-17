@@ -73,24 +73,16 @@ jobs:
       - name: Install dependencies
         working-directory: ./app
         run: npm ci
-      - name: Install wallpaper dependency
-        run: |
-          cd app
-          npm list wallpaper || npm install wallpaper@6.1.0
       - name: Build Windows Installer
         working-directory: ./app
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run electron:build -- --win nsis
-      - name: List output files
-        working-directory: ./app/dist
-        shell: powershell
-        run: Get-ChildItem -Recurse | Select-Object FullName
       - name: Rename artifact
         working-directory: ./app/dist
         shell: powershell
         run: |
-          Get-ChildItem -Filter "*Setup*.exe" -Recurse | ForEach-Object {
+          Get-ChildItem -Filter "*Setup*.exe" | ForEach-Object {
             $newName = $_.BaseName + "-win-x64.exe"
             Rename-Item -Path $_.FullName -NewName $newName
           }
@@ -98,7 +90,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer-x64
-          path: app/dist/**/*Setup*-win-x64.exe
+          path: app/dist/*Setup*-win-x64.exe
           if-no-files-found: error
 
   macos-x64:

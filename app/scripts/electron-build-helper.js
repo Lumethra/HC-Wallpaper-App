@@ -194,15 +194,7 @@ function updateElectronBuilderConfig() {
 
 updateElectronBuilderConfig();
 
-// Update the getBuildCommand function to use passed arguments from workflow
 function getBuildCommand() {
-    // First check if we have command line arguments
-    const args = process.argv.slice(2);
-    if (args.length > 0) {
-        return `electron-builder --config electron-builder.json ${args.join(' ')}`;
-    }
-
-    // Default behavior as fallback
     let buildCommand = 'electron-builder --config electron-builder.json';
 
     if (platform === 'win32') {
