@@ -110,8 +110,8 @@ jobs:
       with:
         name: windows-builds
         path: |
-          app/dist/**/*.exe
-          app/dist/**/*.msi
+          app/dist/*Windows-Portable*.exe
+          app/dist/*Windows-Installer*.exe
         if-no-files-found: warn
 
     - name: Upload macOS artifacts
@@ -119,7 +119,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: macos-builds
-        path: app/dist/**/*.dmg
+        path: app/dist/*macOS*.dmg
         if-no-files-found: warn
     
     - name: Upload Linux artifacts
@@ -128,9 +128,9 @@ jobs:
       with:
         name: linux-builds
         path: |
-          app/dist/**/*.AppImage
-          app/dist/**/*.deb
-          app/dist/**/*.rpm
+          app/dist/*Linux-x64*.AppImage
+          app/dist/*Linux-x64*.deb
+          app/dist/*Linux-x64*.rpm
         if-no-files-found: warn
     
     - name: Upload Linux ARM artifacts
@@ -139,10 +139,7 @@ jobs:
       with:
         name: linux-arm-builds
         path: |
-          app/dist/**/*arm64.AppImage
-          app/dist/**/*armv7l.AppImage
-          app/dist/**/*arm64.deb
-          app/dist/**/*armv7l.deb
-          app/dist/**/*arm64.rpm
-          app/dist/**/*armv7l.rpm
+          app/dist/*Linux-ARM*.AppImage
+          app/dist/*Linux-ARM*.deb
+          app/dist/*Linux-ARM*.rpm
         if-no-files-found: warn
