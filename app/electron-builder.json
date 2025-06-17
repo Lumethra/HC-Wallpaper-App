@@ -12,9 +12,20 @@
         "package.json"
     ],
     "win": {
-        "target": "portable",
-        "artifactName": "${productName}-Portable-${version}.${ext}",
+        "target": [
+            "portable",
+            "nsis"
+        ],
+        "artifactName": "${productName}-${version}-${arch}.${ext}",
         "icon": "public/icons/formatted-icons/Abhay-App-Icon.ico"
+    },
+    "nsis": {
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "shortcutName": "HC Wallpaper App",
+        "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "mac": {
         "target": [
