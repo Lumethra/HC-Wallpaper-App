@@ -24,11 +24,10 @@
         "allowToChangeInstallationDirectory": true,
         "createDesktopShortcut": true,
         "createStartMenuShortcut": true,
-        "shortcutName": "HC Wallpaper App",
-        "artifactName": "${productName}-WinInstaller-${version}.${ext}"
+        "shortcutName": "HC Wallpaper App"
     },
     "portable": {
-        "artifactName": "${productName}-WinPortable-${version}.${ext}"
+        "artifactName": "${productName}-Portable-${version}.${ext}"
     },
     "mac": {
         "target": [
@@ -39,8 +38,7 @@
         "hardenedRuntime": true,
         "gatekeeperAssess": false,
         "entitlements": "entitlements.plist",
-        "entitlementsInherit": "entitlements.plist",
-        "artifactName": "${productName}-Mac-${version}.${ext}"
+        "entitlementsInherit": "entitlements.plist"
     },
     "linux": {
         "target": [
@@ -49,14 +47,7 @@
             "rpm"
         ],
         "category": "Utility",
-        "icon": "public/icons/formatted-icons/Abhay-App-Icon.png",
-        "artifactName": "${productName}-Linux-${version}.${ext}"
-    },
-    "linux-arm64": {
-        "artifactName": "${productName}-LinuxArm64-${version}.${ext}"
-    },
-    "linux-armv7l": {
-        "artifactName": "${productName}-LinuxArmv7l-${version}.${ext}"
+        "icon": "public/icons/formatted-icons/Abhay-App-Icon.png"
     },
     "extraResources": [
         {

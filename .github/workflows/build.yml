@@ -104,23 +104,14 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Upload Windows portable artifacts
+    - name: Upload Windows artifacts
       if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v4
       with:
-        name: windows-portable-builds
+        name: windows-builds
         path: |
-          app/dist/*WinPortable*.exe
-        if-no-files-found: warn
-        
-    - name: Upload Windows installer artifacts
-      if: matrix.os == 'windows-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: windows-installer-builds
-        path: |
-          app/dist/*WinInstaller*.exe
-          app/dist/*WinInstaller*.msi
+          app/dist/**/*.exe
+          app/dist/**/*.msi
         if-no-files-found: warn
 
     - name: Upload macOS artifacts
@@ -137,29 +128,48 @@ jobs:
       with:
         name: linux-builds
         path: |
-          app/dist/*Linux*.AppImage
-          app/dist/*Linux*.deb
-          app/dist/*Linux*.rpm
+          app/dist/**/*.AppImage
+          app/dist/**/*.deb
+          app/dist/**/*.rpm
         if-no-files-found: warn
     
-    - name: Upload Linux ARM64 artifacts
+    - name: Upload Linux ARM artifacts
       if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v4
       with:
-        name: linux-arm64-builds
+        name: linux-arm-builds
         path: |
-          app/dist/*LinuxArm64*.AppImage
-          app/dist/*LinuxArm64*.deb
-          app/dist/*LinuxArm64*.rpm
+          app/dist/**/*arm64.AppImage
+          app/dist/**/*armv7l.AppImage
+          app/dist/**/*arm64.deb
+          app/dist/**/*armv7l.deb
+          app/dist/**/*arm64.rpm
+          app/dist/**/*armv7l.rpm
         if-no-files-found: warn
-        
-    - name: Upload Linux ARMv7l artifacts
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: linux-armv7l-builds
-        path: |
-          app/dist/*LinuxArmv7l*.AppImage
-          app/dist/*LinuxArmv7l*.deb
-          app/dist/*LinuxArmv7l*.rpm
-        if-no-files-found: warn
+
+  release:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*.exe
+            artifacts/**/*.msi
+            artifacts/**/*.dmg
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
