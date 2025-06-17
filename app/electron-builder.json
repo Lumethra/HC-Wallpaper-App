@@ -4,7 +4,7 @@
     "directories": {
         "output": "dist"
     },
-    "asar": false,
+    "asar": true,
     "files": [
         "out/**/*",
         "electron/**/*",
@@ -25,7 +25,7 @@
         "createDesktopShortcut": true,
         "createStartMenuShortcut": true,
         "shortcutName": "HC Wallpaper App",
-        "artifactName": "${productName}-Setup-${version}.${ext}"
+        "artifactName": "${productName}-Setup-${version}-${arch}.${ext}"
     },
     "mac": {
         "target": [
@@ -35,9 +35,7 @@
     },
     "linux": {
         "target": [
-            "AppImage",
-            "deb",
-            "rpm"
+            "AppImage"
         ],
         "category": "Utility",
         "icon": "public/icons/formatted-icons/Abhay-App-Icon.png"

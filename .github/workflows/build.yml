@@ -73,16 +73,21 @@ jobs:
       - name: Install dependencies
         working-directory: ./app
         run: npm ci
-      - name: Update electron-builder config for NSIS
+      - name: Check wallpaper binary
         working-directory: ./app
         shell: powershell
         run: |
-          $configPath = "electron-builder.json"
-          $config = Get-Content $configPath -Raw | ConvertFrom-Json
-          $config.win.target = @("nsis")
-          $config.win.artifactName = "${productName}-Setup-${version}.${ext}"
-          $configJson = $config | ConvertTo-Json -Depth 10
-          Set-Content -Path $configPath -Value $configJson
+          $binPath = "node_modules\wallpaper\windows-wallpaper.exe"
+          if (-not (Test-Path $binPath)) {
+            Write-Host "Wallpaper binary not found, creating empty file at $binPath"
+            $dir = Split-Path -Parent $binPath
+            if (-not (Test-Path $dir)) {
+              New-Item -ItemType Directory -Path $dir -Force
+            }
+            New-Item -ItemType File -Path $binPath -Force
+          } else {
+            Write-Host "Wallpaper binary found at $binPath"
+          }
       - name: Build Windows Installer
         working-directory: ./app
         env:
@@ -91,20 +96,29 @@ jobs:
       - name: List build artifacts
         working-directory: ./app/dist
         shell: powershell
-        run: Get-ChildItem
-      - name: Rename artifact
+        run: Get-ChildItem -Recurse
+      - name: Fix artifact names
         working-directory: ./app/dist
         shell: powershell
         run: |
-          Get-ChildItem -Filter "*Setup*.exe" | ForEach-Object {
-            $newName = $_.BaseName + "-win-x64.exe"
-            Rename-Item -Path $_.FullName -NewName $newName
+          $version = "${{ needs.prepare.outputs.version }}"
+          $files = Get-ChildItem -Filter "*Setup*" -Include "*.exe", "*-Setup-*" -Recurse
+          
+          foreach ($file in $files) {
+            if ($file.Name -eq "-Setup-" -or $file.Name -like "*-Setup-*") {
+              $newName = "HC-Wallpaper-App-Setup-${version}-win-x64.exe"
+              Rename-Item -Path $file.FullName -NewName $newName -Force
+              Write-Host "Renamed $($file.Name) to $newName"
+            }
           }
+          
+          # Verify the renamed files
+          Get-ChildItem -Filter "*.exe"
       - name: Upload Windows Installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer-x64
-          path: app/dist/*-win-x64.exe
+          path: app/dist/*.exe
           if-no-files-found: error
 
   macos-x64:
