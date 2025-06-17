@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  windows-build:
+  windows-installer-build:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
@@ -23,18 +23,53 @@ jobs:
         cd app
         npm install
     
-    - name: Build Windows app (installer & portable)
+    - name: Build Windows installer
       run: |
         cd app
-        npm run electron:build:win
+        npm run electron:build:win:installer
     
-    - name: Upload Windows artifacts
+    - name: List artifacts
+      run: |
+        cd app
+        dir dist
+    
+    - name: Upload Windows installer artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: windows-builds
-        path: |
-          app/dist/*Windows-Portable*.exe
-          app/dist/*Windows-Installer*.exe
+        name: windows-installer-builds
+        path: app/dist/*Windows-Installer*.exe
+        if-no-files-found: warn
+
+  windows-portable-build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        
+    - name: Install dependencies
+      run: |
+        cd app
+        npm install
+    
+    - name: Build Windows portable
+      run: |
+        cd app
+        npm run electron:build:win:portable
+    
+    - name: List artifacts
+      run: |
+        cd app
+        dir dist
+    
+    - name: Upload Windows portable artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-portable-builds
+        path: app/dist/*Windows-Portable*.exe
         if-no-files-found: warn
 
   macos-x64-build:
