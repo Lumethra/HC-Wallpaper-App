@@ -36,18 +36,19 @@
         "shortcutName": "HC Wallpaper App",
         "installerIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
         "uninstallerIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
-        "artifactName": "${productName}-Installer-${version}.exe",
+        "artifactName": "${productName}-Win-Installer-${version}.exe",
         "perMachine": false,
         "allowElevation": true
     },
     "portable": {
-        "artifactName": "${productName}-Portable-${version}.exe"
+        "artifactName": "${productName}-Win-Portable-${version}.exe"
     },
     "mac": {
         "target": [
             "dmg"
         ],
-        "icon": "public/icons/formatted-icons/Abhay-App-Icon.icns"
+        "icon": "public/icons/formatted-icons/Abhay-App-Icon.icns",
+        "artifactName": "${productName}-MacOS-${arch}-${version}.dmg"
     },
     "linux": {
         "target": [
@@ -57,6 +58,7 @@
         ],
         "category": "Utility",
         "icon": "public/icons/formatted-icons/Abhay-App-Icon.png",
+        "artifactName": "${productName}-Linux-${arch}-${version}.${ext}",
         "desktop": {
             "entry": {
                 "Name": "HC Wallpaper App",

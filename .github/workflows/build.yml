@@ -75,8 +75,8 @@ jobs:
       - name: Upload Windows Portable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-portable-x64
-          path: app/dist/*.exe
+          name: HC-Wallpaper-App-Win-Portable
+          path: app/dist/*Win-Portable*.exe
           if-no-files-found: error
 
   windows-installer:
@@ -107,8 +107,8 @@ jobs:
       - name: Upload Windows Installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer-x64
-          path: app/dist/*-Installer-*.exe
+          name: HC-Wallpaper-App-Win-Installer
+          path: app/dist/*Win-Installer*.exe
           if-no-files-found: error
 
   macos-x64:
@@ -157,8 +157,8 @@ jobs:
       - name: Upload macOS x64 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: macos-x64-build
-          path: app/dist/*.dmg
+          name: HC-Wallpaper-App-MacOS-x64
+          path: app/dist/*MacOS-x64*.dmg
           if-no-files-found: error
 
   macos-arm64:
@@ -207,8 +207,8 @@ jobs:
       - name: Upload macOS ARM64 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: macos-arm64-build
-          path: app/dist/*.dmg
+          name: HC-Wallpaper-App-MacOS-arm64
+          path: app/dist/*MacOS-arm64*.dmg
           if-no-files-found: error
 
   linux-x64:
@@ -239,8 +239,8 @@ jobs:
       - name: Upload Linux x64 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-x64-build
-          path: app/dist/*.AppImage
+          name: HC-Wallpaper-App-Linux-x64
+          path: app/dist/*Linux-x64*.AppImage
           if-no-files-found: error
 
   linux-arm64:
@@ -271,8 +271,8 @@ jobs:
       - name: Upload Linux ARM64 artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-arm64-build
-          path: app/dist/*.AppImage
+          name: HC-Wallpaper-App-Linux-arm64
+          path: app/dist/*Linux-arm64*.AppImage
           if-no-files-found: error
 
   linux-armv7l:
@@ -303,8 +303,8 @@ jobs:
       - name: Upload Linux ARMv7l artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-armv7l-build
-          path: app/dist/*.AppImage
+          name: HC-Wallpaper-App-Linux-armv7l
+          path: app/dist/*Linux-armv7l*.AppImage
           if-no-files-found: error
 
   release:
