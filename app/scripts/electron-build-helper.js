@@ -4,7 +4,9 @@ const { execSync } = require('child_process');
 const os = require('os');
 
 const platform = process.platform;
-console.log(`Building for platform: ${platform}`);
+const buildTarget = process.env.BUILD_TARGET;
+
+console.log(`Building for platform: ${platform}, target: ${buildTarget || 'default'}`);
 
 // Convert icons properly by executing the script directly
 console.log('Converting application icons...');
@@ -84,7 +86,9 @@ try {
 
     console.log('✓ Created fallback HTML');
 
-    copyPlatformSpecificFiles(outElectronDir);
+    // Determine which platform files to copy based on build target
+    const targetPlatform = buildTarget ? buildTarget.split('-')[0] : platform;
+    copyPlatformSpecificFiles(outElectronDir, targetPlatform);
 } catch (err) {
     console.error('Error copying electron directory:', err);
 }
@@ -106,11 +110,11 @@ try {
     console.error('Error fixing HTML paths:', err);
 }
 
-function copyPlatformSpecificFiles(outDir) {
-    console.log(`Preparing platform-specific files for: ${platform}`);
+function copyPlatformSpecificFiles(outDir, targetPlatform) {
+    console.log(`Preparing platform-specific files for: ${targetPlatform}`);
 
     try {
-        if (platform === 'win32') {
+        if (targetPlatform === 'win' || targetPlatform === 'win32') {
             // Check multiple potential binary locations
             const possiblePaths = [
                 path.join(__dirname, '..', 'node_modules', 'wallpaper', 'source', 'windows-wallpaper.exe'),
@@ -131,54 +135,11 @@ function copyPlatformSpecificFiles(outDir) {
                 // Copy to multiple locations to ensure it's found
                 const destBinary = path.join(outDir, 'windows-wallpaper.exe');
                 fs.copyFileSync(winBinary, destBinary);
-                console.log('✓ Copied Windows wallpaper binary to electron directory');
-
-                // Also copy to a higher level directory
-                const outBinary = path.join(__dirname, '..', 'out', 'windows-wallpaper.exe');
-                fs.copyFileSync(winBinary, outBinary);
-                console.log('✓ Copied Windows wallpaper binary to out directory');
-
-                // Create a simple fallback script in case the binary fails
-                const psScript = `
-param([string]$imagePath)
-Add-Type -TypeDefinition @"
-using System;
-using System.Runtime.InteropServices;
-public class Wallpaper {
-    [DllImport("user32.dll", CharSet = CharSet.Auto)]
-    private static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-    public static void SetWallpaper(string path) {
-        SystemParametersInfo(20, 0, path, 0x01 | 0x02);
-    }
-}
-"@
-[Wallpaper]::SetWallpaper($imagePath)
-                `;
-                fs.writeFileSync(path.join(outDir, 'set-wallpaper.ps1'), psScript);
-                console.log('✓ Created PowerShell wallpaper script fallback');
+                console.log('✓ Copied Windows wallpaper binary');
             } else {
-                console.log('Windows wallpaper binary not found! Creating fallback script');
-
-                // Create a PowerShell script as fallback
-                const psScript = `
-param([string]$imagePath)
-Add-Type -TypeDefinition @"
-using System;
-using System.Runtime.InteropServices;
-public class Wallpaper {
-    [DllImport("user32.dll", CharSet = CharSet.Auto)]
-    private static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-    public static void SetWallpaper(string path) {
-        SystemParametersInfo(20, 0, path, 0x01 | 0x02);
-    }
-}
-"@
-[Wallpaper]::SetWallpaper($imagePath)
-                `;
-                fs.writeFileSync(path.join(outDir, 'set-wallpaper.ps1'), psScript);
-                console.log('✓ Created PowerShell wallpaper script as primary method');
+                console.log('Windows wallpaper binary not found!');
             }
-        } else if (platform === 'darwin') {
+        } else if (targetPlatform === 'mac' || targetPlatform === 'darwin') {
             console.log('Creating macOS AppleScript helper');
             const macScript = `
 on run argv
@@ -192,7 +153,7 @@ end run
             `.trim();
             fs.writeFileSync(path.join(outDir, 'set-wallpaper.scpt'), macScript);
             console.log('✓ Created macOS AppleScript helper');
-        } else if (platform === 'linux') {
+        } else if (targetPlatform === 'linux') {
             console.log('✓ Linux handled by wallpaper module directly');
         }
     } catch (err) {
@@ -222,7 +183,10 @@ function updateElectronBuilderConfig() {
             config.extraResources = [];
         }
 
-        if (platform === 'win32') {
+        // Add platform-specific configurations based on build target
+        const targetPlatform = buildTarget ? buildTarget.split('-')[0] : platform;
+
+        if (targetPlatform === 'win' || targetPlatform === 'win32') {
             let hasWallpaperBinary = false;
             for (const resource of config.extraResources) {
                 if (resource.from && resource.from.includes('wallpaper')) {
@@ -268,12 +232,44 @@ updateElectronBuilderConfig();
 function getBuildCommand() {
     let buildCommand = 'electron-builder --config electron-builder.json';
 
-    if (platform === 'win32') {
-        buildCommand += ' --win portable';
-    } else if (platform === 'darwin') {
-        buildCommand += ' --mac dmg';
-    } else if (platform === 'linux') {
-        buildCommand += ' --linux AppImage';
+    // If a specific build target is provided via environment variable
+    if (buildTarget) {
+        // Handle specific build targets
+        switch (buildTarget) {
+            case 'win-portable':
+                buildCommand += ' --win portable';
+                break;
+            case 'win-installer':
+                buildCommand += ' --win nsis';
+                break;
+            case 'mac-x64':
+                buildCommand += ' --mac dmg --x64';
+                break;
+            case 'mac-arm64':
+                buildCommand += ' --mac dmg --arm64';
+                break;
+            case 'linux-x64':
+                buildCommand += ' --linux AppImage --x64';
+                break;
+            case 'linux-arm64':
+                buildCommand += ' --linux AppImage --arm64';
+                break;
+            case 'linux-armv7l':
+                buildCommand += ' --linux AppImage --armv7l';
+                break;
+            default:
+                console.warn(`Unknown build target: ${buildTarget}. Falling back to default build.`);
+                break;
+        }
+    } else {
+        // Default build command based on platform
+        if (platform === 'win32') {
+            buildCommand += ' --win portable';
+        } else if (platform === 'darwin') {
+            buildCommand += ' --mac dmg';
+        } else if (platform === 'linux') {
+            buildCommand += ' --linux AppImage';
+        }
     }
 
     return buildCommand;
