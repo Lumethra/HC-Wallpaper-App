@@ -1,7 +1,21 @@
 name: Build Electron App
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create a release after building'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      release_version:
+        description: 'Version for the release (e.g., 0.1.0)'
+        required: false
+        default: ''
+        type: string
   push:
     tags:
       - 'v*'
@@ -22,8 +36,19 @@ jobs:
       - name: Get current date
         id: date
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+      - name: Determine release version
+        id: release-version
+        run: |
+          if [[ "${{ github.event.inputs.create_release }}" == "true" && "${{ github.event.inputs.release_version }}" != "" ]]; then
+            echo "version=${{ github.event.inputs.release_version }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_type }}" == "tag" && "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ steps.get-version.outputs.version }}" >> $GITHUB_OUTPUT
+          fi
     outputs:
       version: ${{ steps.get-version.outputs.version }}
+      release_version: ${{ steps.release-version.outputs.version }}
       date: ${{ steps.date.outputs.date }}
 
   windows-portable:
@@ -283,7 +308,7 @@ jobs:
           if-no-files-found: error
 
   create-release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: ${{ (github.event.inputs.create_release == 'true') || startsWith(github.ref, 'refs/tags/v') }}
     needs: [prepare, windows-portable, windows-installer, macos-x64, macos-arm64, linux-x64, linux-arm64, linux-armv7l]
     runs-on: ubuntu-latest
     permissions:
@@ -300,19 +325,16 @@ jobs:
       - name: List artifacts
         run: find artifacts -type f | sort
       
-      - name: Get version from tag
-        id: get-version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-      
       - name: Create Release
         id: create-release
         uses: softprops/action-gh-release@v1
         with:
-          name: HC Wallpaper App v${{ steps.get-version.outputs.version }}
+          name: HC Wallpaper App v${{ needs.prepare.outputs.release_version }}
+          tag_name: v${{ needs.prepare.outputs.release_version }}
           draft: false
           prerelease: false
           body: |
-            ## HC Wallpaper App v${{ steps.get-version.outputs.version }}
+            ## HC Wallpaper App v${{ needs.prepare.outputs.release_version }}
             
             Released on ${{ needs.prepare.outputs.date }}
             
