@@ -75,11 +75,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BUILD_TARGET: win-installer
         run: npm run electron:build
+      - name: List build artifacts
+        working-directory: ./app/dist
+        shell: powershell
+        run: Get-ChildItem -Recurse
       - name: Upload Windows Installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer-x64
-          path: app/dist/*Setup*.exe
+          path: app/dist/*-Setup-*.exe
           if-no-files-found: error
 
   macos-x64:

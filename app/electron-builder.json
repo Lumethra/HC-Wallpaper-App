@@ -4,7 +4,7 @@
     "directories": {
         "output": "dist"
     },
-    "asar": false,
+    "asar": true,
     "files": [
         "out/**/*",
         "electron/**/*",
@@ -12,9 +12,36 @@
         "package.json"
     ],
     "win": {
-        "target": "portable",
-        "artifactName": "${productName}-Portable-${version}.${ext}",
+        "target": [
+            {
+                "target": "nsis",
+                "arch": [
+                    "x64"
+                ]
+            },
+            {
+                "target": "portable",
+                "arch": [
+                    "x64"
+                ]
+            }
+        ],
         "icon": "public/icons/formatted-icons/Abhay-App-Icon.ico"
+    },
+    "nsis": {
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "shortcutName": "HC Wallpaper App",
+        "installerIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
+        "uninstallerIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
+        "artifactName": "${productName}-Setup-${version}.exe",
+        "perMachine": false,
+        "allowElevation": true
+    },
+    "portable": {
+        "artifactName": "${productName}-Portable-${version}.exe"
     },
     "mac": {
         "target": [
@@ -29,24 +56,22 @@
             "rpm"
         ],
         "category": "Utility",
-        "icon": "public/icons/formatted-icons/Abhay-App-Icon.png"
+        "icon": "public/icons/formatted-icons/Abhay-App-Icon.png",
+        "desktop": {
+            "entry": {
+                "Name": "HC Wallpaper App",
+                "Comment": "Hack Club Wallpaper Application",
+                "Categories": "Utility;Graphics;"
+            }
+        }
     },
     "extraResources": [
         {
-            "from": "node_modules/wallpaper/windows-wallpaper.exe",
-            "to": "windows-wallpaper.exe"
-        },
-        {
-            "from": "out/windows-wallpaper.exe",
-            "to": "windows-wallpaper.exe"
-        },
-        {
-            "from": "out/electron/windows-wallpaper.exe",
-            "to": "windows-wallpaper.exe"
-        },
-        {
-            "from": "out/electron/set-wallpaper.ps1",
-            "to": "set-wallpaper.ps1"
+            "from": "node_modules/wallpaper/source/windows-wallpaper.exe",
+            "to": "windows-wallpaper.exe",
+            "filter": [
+                "**/*"
+            ]
         },
         {
             "from": "node_modules/electron/dist/icudtl.dat",

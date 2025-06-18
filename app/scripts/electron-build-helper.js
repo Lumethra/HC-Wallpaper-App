@@ -258,11 +258,18 @@ function getBuildCommand() {
                 buildCommand += ' --linux AppImage --armv7l';
                 break;
             default:
+                // Fall back to platform detection for unknown build targets
                 console.warn(`Unknown build target: ${buildTarget}. Falling back to default build.`);
-                break;
+                if (platform === 'win32') {
+                    buildCommand += ' --win portable';
+                } else if (platform === 'darwin') {
+                    buildCommand += ' --mac dmg';
+                } else if (platform === 'linux') {
+                    buildCommand += ' --linux AppImage';
+                }
         }
     } else {
-        // Default build command based on platform
+        // Default behavior without BUILD_TARGET
         if (platform === 'win32') {
             buildCommand += ' --win portable';
         } else if (platform === 'darwin') {
