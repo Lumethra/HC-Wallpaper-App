@@ -4,7 +4,7 @@
     "directories": {
         "output": "dist"
     },
-    "asar": true,
+    "asar": false,
     "files": [
         "out/**/*",
         "electron/**/*",
@@ -12,25 +12,9 @@
         "package.json"
     ],
     "win": {
-        "target": [
-            "portable",
-            "nsis"
-        ],
-        "artifactName": "${productName}-${version}-${arch}.${ext}",
+        "target": "portable",
+        "artifactName": "${productName}-Portable-${version}.${ext}",
         "icon": "public/icons/formatted-icons/Abhay-App-Icon.ico"
-    },
-    "nsis": {
-        "oneClick": false,
-        "allowToChangeInstallationDirectory": true,
-        "createDesktopShortcut": true,
-        "createStartMenuShortcut": true,
-        "shortcutName": "HC Wallpaper App",
-        "installerIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
-        "uninstallerIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
-        "perMachine": true,
-        "runAfterFinish": false,
-        "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
-        "include": "installer.nsh"
     },
     "mac": {
         "target": [
@@ -40,7 +24,9 @@
     },
     "linux": {
         "target": [
-            "AppImage"
+            "AppImage",
+            "deb",
+            "rpm"
         ],
         "category": "Utility",
         "icon": "public/icons/formatted-icons/Abhay-App-Icon.png"
@@ -48,7 +34,10 @@
     "extraResources": [
         {
             "from": "node_modules/wallpaper/windows-wallpaper.exe",
-            "to": "windows-wallpaper.exe"
+            "to": "windows-wallpaper.exe",
+            "filter": [
+                "**/*"
+            ]
         },
         {
             "from": "node_modules/electron/dist/icudtl.dat",

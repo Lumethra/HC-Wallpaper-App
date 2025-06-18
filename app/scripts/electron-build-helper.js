@@ -129,30 +129,6 @@ function copyPlatformSpecificFiles(outDir) {
     }
 }
 
-// Add this check to handle missing wallpaper binary
-function checkWallpaperBinary() {
-    console.log('Checking for wallpaper binary...');
-    const binaryPath = path.join(__dirname, '..', 'node_modules', 'wallpaper', 'windows-wallpaper.exe');
-
-    if (!fs.existsSync(binaryPath)) {
-        console.log('Wallpaper binary not found, creating directory structure...');
-        const dir = path.dirname(binaryPath);
-
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-
-        // Create an empty file to satisfy the build process
-        fs.writeFileSync(binaryPath, Buffer.alloc(0));
-        console.log('Created placeholder wallpaper binary');
-    } else {
-        console.log('✓ Wallpaper binary found');
-    }
-}
-
-// Call this function before updateElectronBuilderConfig()
-checkWallpaperBinary();
-
 function updateElectronBuilderConfig() {
     try {
         const configPath = path.join(__dirname, '..', 'electron-builder.json');
