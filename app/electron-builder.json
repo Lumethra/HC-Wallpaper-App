@@ -36,7 +36,7 @@
         "shortcutName": "HC Wallpaper App",
         "installerIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
         "uninstallerIcon": "public/icons/formatted-icons/Abhay-App-Icon.ico",
-        "artifactName": "${productName}-Setup-${version}.exe",
+        "artifactName": "${productName}-Installer-${version}.exe",
         "perMachine": false,
         "allowElevation": true
     },

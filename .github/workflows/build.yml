@@ -108,7 +108,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer-x64
-          path: app/dist/*-Setup-*.exe
+          path: app/dist/*-Installer-*.exe
           if-no-files-found: error
 
   macos-x64:
