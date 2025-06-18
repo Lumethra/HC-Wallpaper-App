@@ -240,7 +240,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: HC-Wallpaper-App-Linux-x64
-          path: app/dist/*Linux-x64*.AppImage
+          path: app/dist/*Linux-x86_64*.AppImage
           if-no-files-found: error
 
   linux-arm64:
