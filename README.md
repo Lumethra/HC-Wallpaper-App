@@ -25,4 +25,4 @@
 Visit [hc-wallpaper-app.vercel.app](https://hc-wallpaper-app.vercel.app) to use the web version.
 
 ### Desktop App
-Download the latest version from [itch.io](https://lumethra.itch.io/hc-wallpaper-app)
+Download the latest version from ***Github Releases*** or [itch.io](https://lumethra.itch.io/hc-wallpaper-app)
