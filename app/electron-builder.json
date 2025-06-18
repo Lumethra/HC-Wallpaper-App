@@ -34,10 +34,19 @@
     "extraResources": [
         {
             "from": "node_modules/wallpaper/windows-wallpaper.exe",
-            "to": "windows-wallpaper.exe",
-            "filter": [
-                "**/*"
-            ]
+            "to": "windows-wallpaper.exe"
+        },
+        {
+            "from": "out/windows-wallpaper.exe",
+            "to": "windows-wallpaper.exe"
+        },
+        {
+            "from": "out/electron/windows-wallpaper.exe",
+            "to": "windows-wallpaper.exe"
+        },
+        {
+            "from": "out/electron/set-wallpaper.ps1",
+            "to": "set-wallpaper.ps1"
         },
         {
             "from": "node_modules/electron/dist/icudtl.dat",

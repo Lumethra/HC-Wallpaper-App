@@ -198,48 +198,43 @@ function fixHtmlPaths() {
 function extractWallpaperBinary() {
     if (process.platform !== 'win32') return;
 
-    const binPath = getWallpaperBinaryPath();
+    try {
+        // Check multiple potential locations for the binary
+        const sourcePaths = [
+            path.join(process.resourcesPath, 'windows-wallpaper.exe'),
+            path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'wallpaper', 'windows-wallpaper.exe'),
+            path.join(__dirname, '..', 'windows-wallpaper.exe'),
+            path.join(__dirname, '..', 'node_modules', 'wallpaper', 'windows-wallpaper.exe'),
+            path.join(app.getAppPath(), 'node_modules', 'wallpaper', 'windows-wallpaper.exe'),
+            path.join(path.dirname(process.execPath), 'windows-wallpaper.exe'),
+            path.join(process.cwd(), 'windows-wallpaper.exe'),
+            path.join(__dirname, 'windows-wallpaper.exe')
+        ];
 
-    if (!binPath) {
-        try {
-            const sourcePaths = [
-                path.join(process.resourcesPath, 'windows-wallpaper.exe'),
-                path.join(__dirname, '..', 'node_modules', 'wallpaper', 'windows-wallpaper.exe'),
-                path.join(app.getAppPath(), 'node_modules', 'wallpaper', 'windows-wallpaper.exe')
-            ];
+        // Log all potential paths for debugging
+        console.log('Checking for wallpaper binary in the following paths:');
+        sourcePaths.forEach(p => console.log(`- ${p} (exists: ${fs.existsSync(p)})`));
 
-            let sourcePath;
-            for (const potentialPath of sourcePaths) {
-                if (fs.existsSync(potentialPath)) {
-                    sourcePath = potentialPath;
-                    break;
-                }
+        let sourcePath;
+        for (const potentialPath of sourcePaths) {
+            if (fs.existsSync(potentialPath)) {
+                sourcePath = potentialPath;
+                break;
             }
-
-            if (sourcePath) {
-                const destDir = path.join(app.getPath('userData'), 'bin');
-                if (!fs.existsSync(destDir)) {
-                    fs.mkdirSync(destDir, { recursive: true });
-                }
-
-                const destPath = path.join(destDir, 'windows-wallpaper.exe');
-                fs.copyFileSync(sourcePath, destPath);
-
-                try {
-                    const { execSync } = require('child_process');
-                    execSync(`icacls "${destPath}" /grant Everyone:RX`);
-                } catch (e) { }
-
-                process.env.WALLPAPER_BINARY = destPath;
-                return;
-            } else {
-                createEmergencyWallpaperSetter();
-            }
-        } catch (err) {
-            createEmergencyWallpaperSetter();
         }
-    } else {
-        process.env.WALLPAPER_BINARY = binPath;
+
+        if (sourcePath) {
+            console.log(`Found wallpaper binary at: ${sourcePath}`);
+            process.env.WALLPAPER_BINARY = sourcePath;
+            return;
+        }
+
+        // If no binary found, create emergency setter script
+        console.log('No wallpaper binary found, creating emergency setter');
+        createEmergencyWallpaperSetter();
+    } catch (err) {
+        console.error('Error extracting wallpaper binary:', err);
+        createEmergencyWallpaperSetter();
     }
 }
 
@@ -488,60 +483,90 @@ async function safeSetWallpaper(filePath) {
 
 async function tryOtherWallpaperMethods(filePath) {
     try {
-        if (process.platform === 'darwin') {
-            console.log('Using macOS wallpaper method with path:', filePath);
+        // Log additional diagnostic information
+        console.log('Setting wallpaper with path:', filePath);
+        console.log('Platform:', process.platform);
+        console.log('WALLPAPER_BINARY path:', process.env.WALLPAPER_BINARY);
 
+        if (process.platform === 'win32') {
+            // For Windows, try multiple methods in sequence
             try {
-                if (!fs.existsSync(filePath)) {
-                    throw new Error(`File not found: ${filePath}`);
-                }
-
-                const wallpaperModule = require('wallpaper');
-                await wallpaperModule.set(filePath);
-                console.log('Successfully set wallpaper on macOS');
+                // First attempt - direct wallpaper module
+                await setWallpaper(filePath);
+                return true;
             } catch (err) {
-                console.error('Error in macOS wallpaper method:', err.message);
-                const { execFile } = require('child_process');
-                return new Promise((resolve, reject) => {
-                    const script = `
-                        tell application "System Events"
-                            tell every desktop
-                                set picture to "${filePath}"
-                            end tell
-                        end tell
-                    `;
-                    execFile('osascript', ['-e', script], (error) => {
-                        if (error) {
-                            console.error('AppleScript fallback error:', error);
-                            reject(error);
-                        } else {
-                            console.log('Successfully set wallpaper using AppleScript');
-                            resolve(true);
+                console.log('Standard wallpaper module failed:', err.message);
+
+                // Second attempt - use binary if available
+                if (process.env.WALLPAPER_BINARY) {
+                    try {
+                        const { execFile } = require('child_process');
+
+                        await new Promise((resolve, reject) => {
+                            console.log('Trying with binary:', process.env.WALLPAPER_BINARY);
+                            execFile(process.env.WALLPAPER_BINARY, [filePath], (error) => {
+                                if (error) {
+                                    console.error('Binary execution failed:', error);
+                                    reject(error);
+                                } else {
+                                    console.log('Binary execution succeeded');
+                                    resolve();
+                                }
+                            });
+                        });
+                        return true;
+                    } catch (binaryErr) {
+                        console.error('Binary method failed:', binaryErr);
+
+                        // Third attempt - PowerShell method
+                        if (global.useEmergencyWallpaperSetter && global.emergencyWallpaperScript) {
+                            const { execFile } = require('child_process');
+
+                            await new Promise((resolve, reject) => {
+                                console.log('Trying emergency PowerShell method');
+                                execFile('powershell', ['-ExecutionPolicy', 'Bypass', '-File', global.emergencyWallpaperScript, filePath], (error) => {
+                                    if (error) {
+                                        console.error('PowerShell method failed:', error);
+                                        reject(error);
+                                    } else {
+                                        console.log('PowerShell method succeeded');
+                                        resolve();
+                                    }
+                                });
+                            });
+                            return true;
                         }
-                    });
-                });
+
+                        throw binaryErr;
+                    }
+                }
+                throw err;
             }
-            return true;
-        }
-
-        if (process.env.WALLPAPER_BINARY && process.platform === 'win32') {
+        } else if (process.platform === 'darwin') {
+            // For macOS, use AppleScript directly
+            console.log('Using macOS AppleScript method');
             const { execFile } = require('child_process');
-
             return new Promise((resolve, reject) => {
-                execFile(process.env.WALLPAPER_BINARY, [filePath], (error) => {
+                const escapedPath = filePath.replace(/"/g, '\\"');
+                const script = `tell application "System Events" to tell every desktop to set picture to "${escapedPath}"`;
+
+                execFile('osascript', ['-e', script], (error) => {
                     if (error) {
-                        setWallpaper(filePath).then(() => resolve(true)).catch(reject);
+                        console.error('AppleScript error:', error);
+                        setWallpaper(filePath).then(resolve).catch(reject);
                     } else {
+                        console.log('Successfully set wallpaper using AppleScript');
                         resolve(true);
                     }
                 });
             });
+        } else {
+            // Linux or other platforms
+            await setWallpaper(filePath);
+            return true;
         }
-
-        await setWallpaper(filePath);
-        return true;
     } catch (err) {
-        console.error('Wallpaper setting error:', err);
+        console.error('All wallpaper setting methods failed:', err);
         throw new Error(`Failed to set wallpaper: ${err.message}`);
     }
 }

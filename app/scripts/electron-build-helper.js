@@ -111,16 +111,87 @@ function copyPlatformSpecificFiles(outDir) {
 
     try {
         if (platform === 'win32') {
-            const winBinary = path.join(__dirname, '..', 'node_modules', 'wallpaper', 'windows-wallpaper.exe');
-            if (fs.existsSync(winBinary)) {
+            // Check multiple potential binary locations
+            const possiblePaths = [
+                path.join(__dirname, '..', 'node_modules', 'wallpaper', 'source', 'windows-wallpaper.exe'),
+                path.join(__dirname, '..', 'node_modules', 'wallpaper', 'windows-wallpaper.exe'),
+                path.join(__dirname, '..', 'source', 'windows-wallpaper.exe')
+            ];
+
+            let winBinary = null;
+            for (const potentialPath of possiblePaths) {
+                if (fs.existsSync(potentialPath)) {
+                    winBinary = potentialPath;
+                    console.log(`Found Windows wallpaper binary at: ${winBinary}`);
+                    break;
+                }
+            }
+
+            if (winBinary) {
+                // Copy to multiple locations to ensure it's found
                 const destBinary = path.join(outDir, 'windows-wallpaper.exe');
                 fs.copyFileSync(winBinary, destBinary);
-                console.log('✓ Copied Windows wallpaper binary');
+                console.log('✓ Copied Windows wallpaper binary to electron directory');
+
+                // Also copy to a higher level directory
+                const outBinary = path.join(__dirname, '..', 'out', 'windows-wallpaper.exe');
+                fs.copyFileSync(winBinary, outBinary);
+                console.log('✓ Copied Windows wallpaper binary to out directory');
+
+                // Create a simple fallback script in case the binary fails
+                const psScript = `
+param([string]$imagePath)
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public class Wallpaper {
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+    public static void SetWallpaper(string path) {
+        SystemParametersInfo(20, 0, path, 0x01 | 0x02);
+    }
+}
+"@
+[Wallpaper]::SetWallpaper($imagePath)
+                `;
+                fs.writeFileSync(path.join(outDir, 'set-wallpaper.ps1'), psScript);
+                console.log('✓ Created PowerShell wallpaper script fallback');
             } else {
-                console.log('Windows wallpaper binary not found!');
+                console.log('Windows wallpaper binary not found! Creating fallback script');
+
+                // Create a PowerShell script as fallback
+                const psScript = `
+param([string]$imagePath)
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public class Wallpaper {
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+    public static void SetWallpaper(string path) {
+        SystemParametersInfo(20, 0, path, 0x01 | 0x02);
+    }
+}
+"@
+[Wallpaper]::SetWallpaper($imagePath)
+                `;
+                fs.writeFileSync(path.join(outDir, 'set-wallpaper.ps1'), psScript);
+                console.log('✓ Created PowerShell wallpaper script as primary method');
             }
         } else if (platform === 'darwin') {
-            console.log('✓ macOS uses AppleScript for wallpaper (no binary needed)');
+            console.log('Creating macOS AppleScript helper');
+            const macScript = `
+on run argv
+  set filePath to item 1 of argv
+  tell application "System Events"
+    tell every desktop
+      set picture to filePath
+    end tell
+  end tell
+end run
+            `.trim();
+            fs.writeFileSync(path.join(outDir, 'set-wallpaper.scpt'), macScript);
+            console.log('✓ Created macOS AppleScript helper');
         } else if (platform === 'linux') {
             console.log('✓ Linux handled by wallpaper module directly');
         }
