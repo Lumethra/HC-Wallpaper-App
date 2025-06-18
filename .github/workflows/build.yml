@@ -307,7 +307,7 @@ jobs:
           path: app/dist/*.AppImage
           if-no-files-found: error
 
-  create-release:
+  release:
     if: ${{ (github.event.inputs.create_release == 'true') || startsWith(github.ref, 'refs/tags/v') }}
     needs: [prepare, windows-portable, windows-installer, macos-x64, macos-arm64, linux-x64, linux-arm64, linux-armv7l]
     runs-on: ubuntu-latest
