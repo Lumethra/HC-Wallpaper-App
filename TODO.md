@@ -1,11 +1,5 @@
 # TODO's
 
-- add Linux arm build
-- add Windows Installer build
-- add real MacOS build
-
-- seperate the builds to not mess up (seperate it into seperate jobs for gh action, one for win portable, one for win installer, one for mac x64, one for mac arm, on for linux x64, one for linux arm, one for linux armv7, ...)
-
 - new app bar design
 
 - loading screen
