@@ -281,3 +281,49 @@ jobs:
           name: linux-armv7l-build
           path: app/dist/*.AppImage
           if-no-files-found: error
+
+  create-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [prepare, windows-portable, windows-installer, macos-x64, macos-arm64, linux-x64, linux-arm64, linux-armv7l]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: List artifacts
+        run: find artifacts -type f | sort
+      
+      - name: Get version from tag
+        id: get-version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Create Release
+        id: create-release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: HC Wallpaper App v${{ steps.get-version.outputs.version }}
+          draft: false
+          prerelease: false
+          body: |
+            ## HC Wallpaper App v${{ steps.get-version.outputs.version }}
+            
+            Released on ${{ needs.prepare.outputs.date }}
+            
+            ### Downloads
+            - Windows (portable & installer)
+            - macOS (Intel & Apple Silicon)
+            - Linux (x64, ARM64, & ARMv7)
+            
+            ### Changes
+            _See commit history for details_
+          files: |
+            artifacts/**/*.exe
+            artifacts/**/*.dmg
+            artifacts/**/*.AppImage
