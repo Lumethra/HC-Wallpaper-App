@@ -7,7 +7,7 @@
 
   <br/>
   
-  <img src="https://path-to-screenshot.png" width="600" alt="App Screenshot" />
+  <img src="[https://path-to-screenshot.png](https://hc-cdn.hel1.your-objectstorage.com/s/v3/4fcf5c80d580ba04b3607f9dc1bc3271b9417452_screenshot_2025-06-19_213617.png)" width="600" alt="App Screenshot" />
 </div>
 
 ## ✨ Features
