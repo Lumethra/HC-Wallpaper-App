@@ -199,7 +199,6 @@ function extractWallpaperBinary() {
     if (process.platform !== 'win32') return;
 
     try {
-        // Check multiple potential locations for the binary
         const sourcePaths = [
             path.join(process.resourcesPath, 'windows-wallpaper.exe'),
             path.join(process.resourcesPath, 'app.asar.unpacked', 'node_modules', 'wallpaper', 'windows-wallpaper.exe'),
@@ -211,7 +210,6 @@ function extractWallpaperBinary() {
             path.join(__dirname, 'windows-wallpaper.exe')
         ];
 
-        // Log all potential paths for debugging
         console.log('Checking for wallpaper binary in the following paths:');
         sourcePaths.forEach(p => console.log(`- ${p} (exists: ${fs.existsSync(p)})`));
 
@@ -229,7 +227,6 @@ function extractWallpaperBinary() {
             return;
         }
 
-        // If no binary found, create emergency setter script
         console.log('No wallpaper binary found, creating emergency setter');
         createEmergencyWallpaperSetter();
     } catch (err) {
@@ -483,21 +480,12 @@ async function safeSetWallpaper(filePath) {
 
 async function tryOtherWallpaperMethods(filePath) {
     try {
-        // Log additional diagnostic information
-        console.log('Setting wallpaper with path:', filePath);
-        console.log('Platform:', process.platform);
-        console.log('WALLPAPER_BINARY path:', process.env.WALLPAPER_BINARY);
-
         if (process.platform === 'win32') {
-            // For Windows, try multiple methods in sequence
             try {
-                // First attempt - direct wallpaper module
                 await setWallpaper(filePath);
                 return true;
             } catch (err) {
                 console.log('Standard wallpaper module failed:', err.message);
-
-                // Second attempt - use binary if available
                 if (process.env.WALLPAPER_BINARY) {
                     try {
                         const { execFile } = require('child_process');
@@ -518,7 +506,6 @@ async function tryOtherWallpaperMethods(filePath) {
                     } catch (binaryErr) {
                         console.error('Binary method failed:', binaryErr);
 
-                        // Third attempt - PowerShell method
                         if (global.useEmergencyWallpaperSetter && global.emergencyWallpaperScript) {
                             const { execFile } = require('child_process');
 
@@ -543,7 +530,6 @@ async function tryOtherWallpaperMethods(filePath) {
                 throw err;
             }
         } else if (process.platform === 'darwin') {
-            // For macOS, use AppleScript directly
             console.log('Using macOS AppleScript method');
             const { execFile } = require('child_process');
             return new Promise((resolve, reject) => {
@@ -561,7 +547,6 @@ async function tryOtherWallpaperMethods(filePath) {
                 });
             });
         } else {
-            // Linux or other platforms
             await setWallpaper(filePath);
             return true;
         }
