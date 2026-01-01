@@ -28,7 +28,7 @@
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "electron-is-dev": "^3.0.1",
-    "next": "^15.3.2",
+    "next": "15.3.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-icons": "^5.5.0",
